@@ -33,6 +33,13 @@ export interface VaultContainer {
   ciphertext: Uint8Array;   // includes GCM auth tag
   shares: EncryptedShare[];
   signature: Uint8Array;
+  /**
+   * Present when this container was encrypted via the Rust WASM backend.
+   * Stores the raw QuantumVaultContainer JSON so the bridge can pass it
+   * back to qv_decrypt without lossy TypeScript ↔ Rust round-trips.
+   * Never serialised to the user-visible JSON export.
+   */
+  _wasmJson?: string;
 }
 
 /** One participant who holds a KEM keypair and possibly a share. */

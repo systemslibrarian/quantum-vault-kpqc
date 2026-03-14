@@ -26,6 +26,9 @@ pnpm-debug.log*
 *.wat
 pkg/
 wasm-pack.log
+# wasm-pack build output (serve from public/ for the Next.js demo)
+web-demo/src/lib/wasm-pkg/
+web-demo/public/wasm-pkg/
 
 # ------------------------------
 # Environment files

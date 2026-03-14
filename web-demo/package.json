@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "wasm:build": "wasm-pack build ../crates/qv-core --target web --features wasm --out-dir ../web-demo/public/wasm-pkg",
+    "wasm:build:dev": "wasm-pack build ../crates/qv-core --target web --features wasm --out-dir ../web-demo/public/wasm-pkg --dev"
   },
   "dependencies": {
     "next": "14.2.29",

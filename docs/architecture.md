@@ -24,10 +24,12 @@ The central library. It compiles to both native code (for the CLI) and WebAssemb
 ```
 src/
 ├─ lib.rs          public API surface: encrypt_file, decrypt_file, split_key, reconstruct_key
+│                  encrypt_bytes, decrypt_bytes, encrypt_with_threshold, decrypt_with_threshold
 ├─ container.rs    .qvault container type + JSON serialization
 ├─ encrypt.rs      AES-256-GCM + Shamir + KEM protect + sign pipeline
 ├─ decrypt.rs      verify + KEM recover + Shamir reconstruct + AES decrypt pipeline
 ├─ shamir.rs       Shamir Secret Sharing over GF(2^8)
+├─ wasm.rs         WebAssembly bindings (compiled with --features wasm only)
 └─ crypto/
     ├─ mod.rs          re-exports backends
     ├─ kem.rs          Kem trait
@@ -184,7 +186,7 @@ Summary:
 
 ## Web demo
 
-A Next.js static export that runs the full crypto pipeline in the browser.
+A Next.js 14 static export that runs the full crypto pipeline in the browser.
 
 ### Technology
 
@@ -192,10 +194,87 @@ A Next.js static export that runs the full crypto pipeline in the browser.
 |-------|--------|
 | Framework | Next.js 14 (App Router, static export) |
 | Styling | Tailwind CSS |
-| AES-256-GCM | Web Crypto API (`SubtleCrypto`) |
-| Shamir SSS | TypeScript port of `shamir.rs` (GF(256)) |
-| KEM / signature | Dev stub in TypeScript (mirrors `dev.rs`) |
-| Future WASM | `qv-core` compiled with `wasm-pack` |
+| AES-256-GCM | Rust WASM (via qv-core) when available; Web Crypto API (`SubtleCrypto`) otherwise |
+| Shamir SSS | Rust WASM (via qv-core) when available; TypeScript port of `shamir.rs` otherwise |
+| KEM / signature | Rust WASM dev backend when available; TypeScript dev stub otherwise |
+| WASM build | `wasm-pack build crates/qv-core --target bundler --features wasm` |
+
+### WASM bridge architecture
+
+```
+useVault.ts
+    │
+    ▼  import from '@/lib/wasm-bridge'
+    │
+wasm-bridge.ts
+    │
+    ├─── (WASM loaded) ──▶  wasm-pkg/qv_core  (Rust, compiled by wasm-pack)
+    │                            │
+    │                            ▼  qv_kem_generate_keypair()
+    │                               qv_sig_generate_keypair()
+    │                               qv_encrypt(plaintext, kemPubKeysJson, threshold, sigPrivB64)
+    │                               qv_decrypt(containerJson, selectedPairsJson, sigPubB64)
+    │
+    └─── (WASM missing) ─▶  vault.ts  (TypeScript fallback — identical API)
+```
+
+`wasm-bridge.ts` begins loading the WASM module as soon as it is first imported
+(fire-and-forget).  Any call that arrives before the load completes awaits the
+in-flight promise.  If the `wasm-pkg` directory does not exist the import
+silently fails and every call is forwarded to the TypeScript fallback.
+
+The demo therefore works out of the box (with the TS backend) and automatically
+upgrades to the Rust backend once the WASM is built — no code changes required.
+
+### Building the WASM module
+
+Prerequisites: `wasm-pack` installed (`cargo install wasm-pack` or via the
+[official installer](https://rustwasm.github.io/wasm-pack/installer/)).
+
+```sh
+# From the repo root
+wasm-pack build crates/qv-core --target web --features wasm \
+  --out-dir web-demo/public/wasm-pkg
+
+# Or use the npm helper script
+cd web-demo && npm run wasm:build
+```
+
+The command produces `web-demo/public/wasm-pkg/` containing:
+
+```
+qv_core.js          — JS glue (ES module; default export = init())
+qv_core_bg.wasm     — compiled Rust (AES-GCM, Shamir, KEM, Signature)
+qv_core.d.ts        — TypeScript type declarations
+qv_core_bg.js       — internal wasm-bindgen glue
+package.json
+```
+
+This directory is in `.gitignore` and is served as a static asset by Next.js
+from the `public/` folder.  The `wasm-bridge.ts` loads `/wasm-pkg/qv_core.js`
+at runtime using a `Function`-constructor dynamic import so that webpack never
+tries to resolve or bundle the module at build time.  This means the Next.js
+app builds successfully even when the WASM module has not been compiled yet.
+
+### WASM Rust module (`crates/qv-core/src/wasm.rs`)
+
+Exported functions (compiled only with `--features wasm`):
+
+| Function | JS signature | Purpose |
+|----------|-------------|---------|
+| `qv_kem_generate_keypair` | `() → string` | KEM keypair JSON `{pub, priv}` |
+| `qv_sig_generate_keypair` | `() → string` | Sig keypair JSON `{pub, priv}` |
+| `qv_encrypt` | `(Uint8Array, string, number, string) → string` | Full encrypt pipeline → container JSON |
+| `qv_decrypt` | `(string, string, string) → Uint8Array` | Full decrypt pipeline → plaintext bytes |
+
+Key encoding: all byte buffers are base64 strings in JSON to avoid JS/WASM
+`Uint8Array` alignment issues for key material.  Container bytes (nonce,
+ciphertext, shares) are carried inside the opaque `_wasmJson` field and never
+re-encoded.
+
+`qv_decrypt` accepts `selectedPairsJson` (an array of `{shareIndex, privKey}`)
+so non-consecutive participant subsets work correctly — it matches shares by
+index rather than positional order.
 
 ### Visual pipeline
 
@@ -204,7 +283,7 @@ A Next.js static export that runs the full crypto pipeline in the browser.
       │
 [Encrypt button]
       │
-      ▼  AES-256-GCM → cards flip face-down
+      ▼  AES-256-GCM (Rust WASM / Web Crypto) → cards flip face-down
       │
       ▼  Shamir split → key shatters into share cards dealt to participants
       │

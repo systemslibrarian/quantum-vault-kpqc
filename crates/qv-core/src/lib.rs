@@ -20,6 +20,16 @@ pub mod decrypt;
 pub mod encrypt;
 pub mod shamir;
 
+/// WebAssembly bindings — compiled only with the `wasm` feature.
+///
+/// Build with:
+/// ```sh
+/// wasm-pack build crates/qv-core --target bundler --features wasm \
+///   --out-dir web-demo/src/lib/wasm-pkg
+/// ```
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 pub use container::{EncryptedKeyShare, QuantumVaultContainer};
 pub use shamir::{reconstruct_secret, split_secret, Share as KeyShare};
 

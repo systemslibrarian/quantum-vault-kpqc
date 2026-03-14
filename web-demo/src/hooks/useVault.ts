@@ -7,7 +7,7 @@ import {
   sigGenerateKeypair,
   encryptPayload,
   decryptPayload,
-} from '@/lib/vault';
+} from '@/lib/wasm-bridge';
 import type {
   PlayingCard,
   CardState,
