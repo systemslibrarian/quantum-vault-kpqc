@@ -1,0 +1,548 @@
+/* =========================================================
+   Quantum Vault — Bank Vault Demo Styles
+   ========================================================= */
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  background: #f0ede6;
+  color: #2a2520;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- Layout ---------- */
+.page-wrapper {
+  width: 100%;
+  max-width: 780px;
+  padding: 0 16px 48px;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 32px 0 20px;
+  text-align: center;
+}
+
+.site-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1a1715;
+}
+
+.site-subtitle {
+  font-size: 0.9rem;
+  color: #5c5650;
+  margin-top: 4px;
+}
+
+/* ---------- Hint Banner ---------- */
+.hint-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #eef3fb;
+  border: 1px solid #a8bfe0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 0.875rem;
+  color: #2d4270;
+}
+
+.hint-banner.visible {
+  display: flex;
+}
+
+.btn-dismiss {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #5070a0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.btn-dismiss:hover {
+  background: #d0dcf0;
+}
+
+/* ---------- Vault Wall ---------- */
+.vault-section {
+  background: #B4B2A9;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.25),
+    0 4px 16px rgba(0,0,0,0.15);
+}
+
+.vault-wall {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .vault-wall {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+}
+
+/* ---------- Deposit Box ---------- */
+.deposit-box {
+  aspect-ratio: 1.15 / 1;
+  border-radius: 6px;
+  border: 2px solid #888780;
+  background: #D3D1C7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 200ms, box-shadow 200ms, transform 100ms;
+  position: relative;
+  outline: none;
+}
+
+.deposit-box:hover {
+  border-color: #666460;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.deposit-box:active {
+  transform: scale(0.97);
+}
+
+.deposit-box:focus-visible {
+  outline: 3px solid #534AB7;
+  outline-offset: 2px;
+}
+
+.deposit-box.occupied {
+  background: #FAEEDA;
+  border-color: #BA7517;
+}
+
+.deposit-box.occupied:hover {
+  border-color: #8a5510;
+}
+
+.deposit-box.selected {
+  border-color: #534AB7 !important;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(83, 74, 183, 0.25);
+}
+
+.box-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #4a4740;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.occupied .box-number {
+  color: #6b4010;
+}
+
+.box-status {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a7870;
+}
+
+.occupied .box-status {
+  color: #a06010;
+}
+
+/* ---------- Keyhole (CSS shape) ---------- */
+.keyhole {
+  width: 16px;
+  height: 18px;
+  position: relative;
+}
+
+.keyhole::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 2px;
+  color: #7a7870;
+}
+
+.deposit-box.occupied .keyhole::before {
+  border-color: #a06010;
+}
+
+.keyhole::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  background: currentColor;
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  border-radius: 0 0 2px 2px;
+  color: #7a7870;
+}
+
+/* Force inherited color for pseudo-elements */
+.deposit-box .keyhole { color: #7a7870; }
+.deposit-box.occupied .keyhole { color: #a06010; }
+
+/* ---------- Panel (slides down below wall) ---------- */
+.panel-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.panel-area.open {
+  max-height: 900px;
+}
+
+.panel-inner {
+  background: #faf8f4;
+  border: 1px solid #d0ccc4;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 24px 24px 20px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1a1715;
+}
+
+.btn-cancel-x {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #888;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-cancel-x:hover {
+  background: #e8e4de;
+  color: #444;
+}
+
+/* ---------- Forms ---------- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5c5650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input,
+.form-group textarea {
+  border: 1px solid #c8c4bc;
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1715;
+  transition: border-color 150ms;
+  width: 100%;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 68px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #534AB7;
+  box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.15);
+}
+
+.field-error {
+  font-size: 0.78rem;
+  color: #c0392b;
+  min-height: 1.1em;
+}
+
+.password-row {
+  display: flex;
+  gap: 12px;
+  margin: 14px 0 4px;
+}
+
+@media (max-width: 500px) {
+  .password-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.panel-note {
+  font-size: 0.8rem;
+  color: #7a7460;
+  margin: 8px 0 0;
+  font-style: italic;
+}
+
+/* ---------- Form Actions ---------- */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background: #534AB7;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 9px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.btn-primary:hover {
+  background: #4239a0;
+}
+
+.btn-primary:disabled {
+  background: #9b95d0;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: none;
+  color: #534AB7;
+  border: 1px solid #534AB7;
+  border-radius: 5px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.btn-outline:hover {
+  background: #f0eeff;
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Pipeline Indicator ---------- */
+#pipeline-area {
+  margin-top: 16px;
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pipeline-step {
+  flex: 1;
+  min-width: 80px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: background-color 200ms, color 200ms;
+}
+
+.pipeline-step.pending {
+  background: #e8e4de;
+  color: #888780;
+}
+
+.pipeline-step.active {
+  background: #534AB7;
+  color: #fff;
+}
+
+.pipeline-step.done {
+  background: #1D9E75;
+  color: #fff;
+}
+
+.pipeline-step.failed {
+  background: #E24B4A;
+  color: #fff;
+}
+
+.pipeline-arrow {
+  color: #aaa9a4;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 500px) {
+  .pipeline-step { min-width: 60px; font-size: 0.65rem; }
+  .pipeline-arrow { font-size: 0.7rem; }
+}
+
+/* ---------- Result Boxes ---------- */
+#deposit-result,
+#retrieve-result {
+  margin-top: 14px;
+}
+
+.result-box {
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.result-success {
+  background: #EAF3DE;
+  color: #27500A;
+  border: 1px solid #97C459;
+}
+
+.result-failure {
+  background: #FCEBEB;
+  color: #791F1F;
+  border: 1px solid #F09595;
+}
+
+.reveal-text {
+  font-family: 'Courier New', 'Consolas', monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 1.8em;
+}
+
+.result-info {
+  font-size: 0.8rem;
+  color: #3a6b15;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ---------- Info Bar ---------- */
+.info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 12px;
+  background: #ede9e2;
+  border-radius: 6px;
+  border: 1px solid #d4d0c8;
+}
+
+.algo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a4740;
+  padding: 4px 10px;
+  background: #f5f3ee;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+}
+
+.algo-badge .algo-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #534AB7;
+  flex-shrink: 0;
+}
+
+/* ---------- Reset Button ---------- */
+.reset-area {
+  text-align: center;
+  margin-top: 28px;
+}
+
+.btn-reset {
+  background: none;
+  color: #8a8078;
+  border: 1px solid #c8c4bc;
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.btn-reset:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: 36px;
+  padding: 12px 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #9a9490;
+  border-top: 1px solid #ddd9d2;
+  width: 100%;
+}

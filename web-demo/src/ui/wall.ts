@@ -1,0 +1,48 @@
+// Render the 4×3 safety deposit box wall and handle box selection
+
+export function renderVaultWall(
+  container: HTMLElement,
+  boxes: Record<string, unknown>,
+  selectedBox: string | null,
+  onBoxClick: (boxNumber: string) => void,
+): void {
+  container.innerHTML = '';
+
+  for (let i = 1; i <= 12; i++) {
+    const num = String(i).padStart(2, '0');
+    const isOccupied = !!boxes[num];
+    const isSelected = selectedBox === num;
+
+    const box = document.createElement('div');
+    box.className = [
+      'deposit-box',
+      isOccupied ? 'occupied' : 'empty',
+      isSelected ? 'selected' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    box.setAttribute('data-box', num);
+    box.setAttribute('role', 'button');
+    box.setAttribute('tabindex', '0');
+    box.setAttribute(
+      'aria-label',
+      `Box ${num}, ${isOccupied ? 'occupied' : 'empty'}${isSelected ? ', selected' : ''}`,
+    );
+
+    box.innerHTML = `
+      <div class="box-number">${num}</div>
+      <div class="keyhole" aria-hidden="true"></div>
+      <div class="box-status">${isOccupied ? 'occupied' : 'empty'}</div>
+    `;
+
+    box.addEventListener('click', () => onBoxClick(num));
+    box.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onBoxClick(num);
+      }
+    });
+
+    container.appendChild(box);
+  }
+}

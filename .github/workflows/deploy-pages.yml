@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Next.js static export
+    name: Build Vite static bundle
     runs-on: ubuntu-latest
 
     steps:
@@ -40,11 +40,10 @@ jobs:
         working-directory: web-demo
         run: npm ci
 
-      - name: Build static export
+      - name: Build Vite bundle
         working-directory: web-demo
-        env:
-          GITHUB_PAGES: 'true'
         run: npm run build
+        # base path '/quantum-vault-kpqc/' is set permanently in vite.config.ts
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -52,7 +51,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web-demo/out
+          path: web-demo/dist
 
   deploy:
     name: Deploy to GitHub Pages

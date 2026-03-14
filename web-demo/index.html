@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Interactive threshold cryptography demo: AES-256-GCM + Shamir Secret Sharing + PBKDF2 + HMAC-SHA-256 in the browser" />
+    <title>Quantum Vault</title>
+  </head>
+  <body>
+    <div class="page-wrapper">
+
+      <!-- Header -->
+      <header class="site-header">
+        <h1 class="site-title">Quantum Vault</h1>
+        <p class="site-subtitle">
+          2-of-3 threshold encryption · AES-256-GCM · Shamir Secret Sharing · PBKDF2 · HMAC-SHA-256
+        </p>
+      </header>
+
+      <!-- Hint banner (shown on first load, hidden after dismiss) -->
+      <div class="hint-banner" id="hint-banner" role="status">
+        <span>
+          Boxes <strong>03</strong>, <strong>08</strong>, and <strong>10</strong>
+          contain demo secrets. Try opening one.
+        </span>
+        <button class="btn-dismiss" id="btn-dismiss-hint" aria-label="Dismiss hint">✕</button>
+      </div>
+
+      <!-- Vault wall: 12 safety deposit boxes -->
+      <section class="vault-section" aria-label="Vault wall">
+        <div class="vault-wall" id="vault-wall" role="group" aria-label="Safety deposit boxes"></div>
+      </section>
+
+      <!-- Panel: slides open below the vault wall on box click -->
+      <div class="panel-area" id="panel" role="region" aria-label="Box panel"></div>
+
+      <!-- Algorithm legend -->
+      <div class="info-bar" aria-label="Cryptographic algorithms">
+        <span class="algo-badge"><span class="algo-dot"></span>AES-256-GCM</span>
+        <span class="algo-badge"><span class="algo-dot"></span>Shamir SSS / GF(2⁸)</span>
+        <span class="algo-badge"><span class="algo-dot"></span>SMAUG-T (PBKDF2+AES-GCM)</span>
+        <span class="algo-badge"><span class="algo-dot"></span>HAETAE (HMAC-SHA-256)</span>
+      </div>
+
+      <!-- Reset -->
+      <div class="reset-area">
+        <button class="btn-reset" id="btn-reset">Reset vault to demo state</button>
+      </div>
+
+      <!-- Footer -->
+      <footer class="site-footer">
+        &copy; 2026 Paul Clark &middot; MIT License &middot;
+        <a href="https://github.com/systemslibrarian/quantum-vault-kpqc" style="color:inherit;">
+          github.com/systemslibrarian/quantum-vault-kpqc
+        </a>
+      </footer>
+
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

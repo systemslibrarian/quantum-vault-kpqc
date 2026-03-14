@@ -273,7 +273,55 @@ qv keygen --backend dev
 
 ---
 
-## Architecture
+## Getting Started — Web Demo
+
+The interactive web demo runs entirely in the browser — no server required.
+
+### Prerequisites
+
+- Node.js ≥ 18
+- npm ≥ 9
+
+### Install and run
+
+```bash
+cd web-demo
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
+### Run tests
+
+```bash
+cd web-demo
+npm run test          # run all tests once (18 tests in 2 suites)
+npm run test:watch    # watch mode
+```
+
+### Build for production
+
+```bash
+cd web-demo
+npm run build   # Next.js production build
+npm run start   # serve locally
+```
+
+### Optional: WASM build (requires Rust + wasm-pack)
+
+```bash
+# Install wasm-pack (one-time)
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Build the WASM package into public/wasm-pkg/
+cd web-demo
+npm run wasm:build
+```
+
+Once built, swap the backend in [web-demo/src/crypto/index.ts](web-demo/src/crypto/index.ts) — one import line change, nothing else.
+
+---
+
 
 The cryptographic implementation uses a **pluggable backend architecture**.
 
@@ -307,21 +355,29 @@ The Shamir implementation requires particular care around:
 Completed:
 
 - AES-256-GCM file encryption
-- Shamir Secret Sharing over GF(2^8)
-- Container serialization with `kem_algorithm` + `sig_algorithm` metadata fields
+- Shamir Secret Sharing over GF(2^8) with duplicate-index and zero-index validation
+- Container serialization with `kem_algorithm` + `sig_algorithm` metadata fields and AAD-protected AES-GCM
 - Pluggable backend architecture (`dev-backend`, `kpqc-native`, `kpqc-wasm` feature flags)
-- CLI (`qv keygen / encrypt / decrypt`) with `--backend dev|kpqc` flag
+- CLI (`qv keygen / encrypt / decrypt`) with `--backend dev|kpqc` flag; key files created with `0600` permissions
 - WASM bridge for the browser demo (TypeScript fallback included)
-- `build.rs` for SMAUG-T + HAETAE C compilation (activated by `kpqc-native`)
-- `kpqc_ffi.rs` — safe Rust wrappers over the `smaug3_*` / `haetae3_*` C API
+- `build.rs` for SMAUG-T + HAETAE C compilation (activated by `kpqc-native`) with correct source paths, mode defines, and `randombytes_shim.c` OS entropy
+- `kpqc_ffi.rs` — safe Rust wrappers with correct SMAUG-T + HAETAE symbol names, sizes, and HAETAE 7-arg API
 - Feature-gated `kpqc.rs` — native FFI / WASM stub / no-op stub automatically selected
+- Full adversarial security audit (20 findings resolved; see commit history)
+- **Interactive web demo** (Next.js, Tailwind, Framer Motion):
+  - Mock backend with real AES-256-GCM and real GF(256) Shamir (18 tests passing)
+  - 52-card deck visualization with card flip, key scatter, lock/unlock, seal animations
+  - Shamir threshold controls (N and T sliders)
+  - Algorithm showcase carousel (CryptoZoo) with 6 algorithm cards
+  - Fully responsive, accessible, no image assets
+  - Easter egg: type `meow` for cat mode
+  - WASM backend swap-in point documented
 
 In progress / remaining:
 
 - Vendor the KpqC reference C implementations (`vendor/smaug-t/`, `vendor/haetae/`)
-- SMAUG-T WASM path (Emscripten / pure-Rust port)
+- SMAUG-T / HAETAE WASM backend (swap into demo's `crypto/index.ts`)
 - Hybrid mode (KpqC + NIST algorithm support)
-- Interactive web demo with card deck visualization
 - Formal test vectors
 
 ---

@@ -145,6 +145,55 @@ plaintext
 
 ---
 
+## Additional Authenticated Data (AAD)
+
+The AES-256-GCM AAD binds the ciphertext to its policy and algorithm context.
+It is **recomputed** at decryption time (not stored) from the container fields:
+
+```json
+{
+  "kem_algorithm": "<value>",
+  "sig_algorithm": "<value>",
+  "threshold":     <uint8>,
+  "version":       <uint8>
+}
+```
+
+Keys appear in **alphabetical order** in the serialised form.  Any mismatch in these
+fields causes AES-GCM authentication to fail.
+
+---
+
+## Size estimates (SMAUG-T-3 / HAETAE-3, n=5 shares)
+
+| Plaintext | Container size (approx) | Overhead |
+|-----------|------------------------|---------|
+| 1 KB | 9.8 KB | ×9.8 |
+| 1 MB | 1 057 KB | +0.8% |
+| 100 MB | 100.9 MB | +0.9% |
+
+Fixed overhead ≈ 8 192 B (5 × 992 B KEM cts + 5 × 32 B shares + 2 349 B sig + JSON).
+
+---
+
+## Parser validation checklist
+
+Parsers MUST enforce these checks **in order** before any cryptographic operation:
+
+1. `len(data) ≤ 64 MiB` — memory exhaustion guard
+2. Valid UTF-8 JSON
+3. `magic == "QVLT1"`
+4. `version == 1`
+5. `threshold >= 2`
+6. `share_count >= threshold`
+7. `shares.len() == share_count`
+8. `nonce.len() == 12`
+9. All `shares[i].index` unique and non-zero
+10. Signature verification (before any KEM / AES operation)
+11. AES-GCM decrypt with recomputed AAD
+
+---
+
 ## Versioning policy
 
 Backward-incompatible changes increment `version`.  Old parsers are expected
@@ -154,5 +203,5 @@ Future planned versions:
 
 | Version | Change |
 |---------|--------|
-| 2 | SMAUG-T KEM ciphertext format |
-| 3 | HAETAE signature over binary encoding |
+| 2 | Optional: base64url byte arrays instead of JSON integer arrays |
+| 3 | HAETAE signature over binary-encoded fields (smaller containers) |
