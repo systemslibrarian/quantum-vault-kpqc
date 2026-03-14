@@ -1,6 +1,6 @@
 # Quantum Vault — Web Demo
 
-An interactive browser demo that visualises every layer of the Quantum Vault cryptographic stack using a bank vault of 12 safety deposit boxes.
+An interactive browser demo that visualises every layer of the Quantum Vault cryptographic stack using a bank vault of 9 safety deposit boxes (3×3 grid).
 
 > **v5.0 — real KpqC cryptography.** All cryptographic operations run as genuine WebAssembly compiled from the official KpqC C reference implementations. SMAUG-T Level 1 handles key encapsulation; HAETAE Mode 2 handles container signing. No mocks, no HMAC substitutes.
 
@@ -16,6 +16,20 @@ npm run dev
 ```
 
 Requires Node ≥ 18.
+
+---
+
+## Demo Box Passwords
+
+Three boxes are pre-sealed on first visit. Any two of the three passwords unlock each box.
+
+| Box | Password 1 | Password 2 | Password 3 |
+|-----|-----------|-----------|-----------|
+| 03 | `ruby` | `emerald` | `diamond` |
+| 06 | `fortress` | `bastion` | `citadel` |
+| 09 | `monday` | `tuesday` | `wednesday` |
+
+The passwords are also shown in the **"How This Demo Works"** panel on the demo page itself.
 
 ---
 

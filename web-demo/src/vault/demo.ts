@@ -19,12 +19,12 @@ const DEMO_BOXES: DemoBox[] = [
     passwords: ['ruby', 'emerald', 'diamond'],
   },
   {
-    number: '08',
+    number: '06',
     secret: 'Launch code: ALPHA-7749-ZULU',
     passwords: ['fortress', 'bastion', 'citadel'],
   },
   {
-    number: '10',
+    number: '09',
     secret: 'The meeting is moved to Friday at noon',
     passwords: ['monday', 'tuesday', 'wednesday'],
   },

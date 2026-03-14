@@ -17,8 +17,8 @@ Three demo boxes are pre-sealed on first visit. Each requires two correct passwo
 | Box | Secret | Alice | Bob | Carol |
 |-----|--------|-------|-----|-------|
 | 03 | *The treasure map is under the old oak tree* | `ruby` | `emerald` | `diamond` |
-| 08 | *Launch code: ALPHA-7749-ZULU* | `fortress` | `bastion` | `citadel` |
-| 10 | *The meeting is moved to Friday at noon* | `monday` | `tuesday` | `wednesday` |
+| 06 | *Launch code: ALPHA-7749-ZULU* | `fortress` | `bastion` | `citadel` |
+| 09 | *The meeting is moved to Friday at noon* | `monday` | `tuesday` | `wednesday` |
 
 Unlock any box by entering **any two** of its three passwords.
 

@@ -1,4 +1,4 @@
-// Render the 4×3 safety deposit box wall and handle box selection
+// Render the 3×3 safety deposit box wall and handle box selection
 
 export function renderVaultWall(
   container: HTMLElement,
@@ -8,7 +8,7 @@ export function renderVaultWall(
 ): void {
   container.innerHTML = '';
 
-  for (let i = 1; i <= 12; i++) {
+  for (let i = 1; i <= 9; i++) {
     const num = String(i).padStart(2, '0');
     const isOccupied = !!boxes[num];
     const isSelected = selectedBox === num;

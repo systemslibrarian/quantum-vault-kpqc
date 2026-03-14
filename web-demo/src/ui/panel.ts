@@ -1,5 +1,7 @@
 // Deposit and retrieval panel forms with inline validation
 
+import { t } from '../i18n';
+
 export interface DepositFormData {
   message: string;
   passwords: [string, string, string];
@@ -18,36 +20,36 @@ export function showDepositPanel(
   panel.innerHTML = `
     <div class="panel-inner">
       <div class="panel-header">
-        <h2 class="panel-title">Box ${boxNumber} — store a secret</h2>
+        <h2 class="panel-title">Box ${boxNumber} — ${t('storeSecret')}</h2>
         <button class="btn-cancel-x" aria-label="Close panel">✕</button>
       </div>
       <div class="form-group">
-        <label for="deposit-message">Secret message</label>
-        <textarea id="deposit-message" placeholder="Type your secret..." rows="3"></textarea>
+        <label for="deposit-message">${t('secretMessage')}</label>
+        <textarea id="deposit-message" placeholder="${t('secretPlaceholder')}" rows="3"></textarea>
         <div class="field-error" id="err-message"></div>
       </div>
       <div class="password-row">
         <div class="form-group">
-          <label for="pw-alice">Alice's key</label>
-          <input type="text" id="pw-alice" autocomplete="off" placeholder="alice's password" />
+          <label for="pw-alice">${t('aliceKey')}</label>
+          <input type="text" id="pw-alice" autocomplete="off" placeholder="${t('alicePh')}" />
           <div class="field-error" id="err-alice"></div>
         </div>
         <div class="form-group">
-          <label for="pw-bob">Bob's key</label>
-          <input type="text" id="pw-bob" autocomplete="off" placeholder="bob's password" />
+          <label for="pw-bob">${t('bobKey')}</label>
+          <input type="text" id="pw-bob" autocomplete="off" placeholder="${t('bobPh')}" />
           <div class="field-error" id="err-bob"></div>
         </div>
         <div class="form-group">
-          <label for="pw-carol">Carol's key</label>
-          <input type="text" id="pw-carol" autocomplete="off" placeholder="carol's password" />
+          <label for="pw-carol">${t('carolKey')}</label>
+          <input type="text" id="pw-carol" autocomplete="off" placeholder="${t('carolPh')}" />
           <div class="field-error" id="err-carol"></div>
         </div>
       </div>
-      <p class="panel-note">Any 2 of these 3 passwords will be needed to open this box.</p>
+      <p class="panel-note">${t('thresholdNote')}</p>
       <div id="pipeline-area"></div>
       <div class="form-actions">
-        <button class="btn-primary" id="btn-seal">Seal deposit box</button>
-        <button class="btn-outline" id="btn-cancel-deposit">Cancel</button>
+        <button class="btn-primary" id="btn-seal">${t('sealBtn')}</button>
+        <button class="btn-outline" id="btn-cancel-deposit">${t('cancelBtn')}</button>
       </div>
       <div id="deposit-result"></div>
     </div>
@@ -76,31 +78,29 @@ export function showDepositPanel(
 
     let valid = true;
     if (!message) {
-      (panel.querySelector('#err-message') as HTMLElement).textContent =
-        'Message cannot be empty.';
+      (panel.querySelector('#err-message') as HTMLElement).textContent = t('msgEmpty');
       valid = false;
     }
     if (!alice || alice.length < 4) {
       (panel.querySelector('#err-alice') as HTMLElement).textContent = alice
-        ? 'Min 4 characters.'
-        : 'Required.';
+        ? t('minChars')
+        : t('required');
       valid = false;
     }
     if (!bob || bob.length < 4) {
       (panel.querySelector('#err-bob') as HTMLElement).textContent = bob
-        ? 'Min 4 characters.'
-        : 'Required.';
+        ? t('minChars')
+        : t('required');
       valid = false;
     }
     if (!carol || carol.length < 4) {
       (panel.querySelector('#err-carol') as HTMLElement).textContent = carol
-        ? 'Min 4 characters.'
-        : 'Required.';
+        ? t('minChars')
+        : t('required');
       valid = false;
     }
     if (valid && (alice === bob || bob === carol || alice === carol)) {
-      (panel.querySelector('#err-alice') as HTMLElement).textContent =
-        'All 3 passwords must be different.';
+      (panel.querySelector('#err-alice') as HTMLElement).textContent = t('allDiff');
       valid = false;
     }
 
@@ -108,8 +108,7 @@ export function showDepositPanel(
 
     const btn = panel.querySelector<HTMLButtonElement>('#btn-seal')!;
     btn.disabled = true;
-    btn.textContent = 'Sealing…';
-    // Hide cancel while crypto runs
+    btn.textContent = t('sealing');
     (panel.querySelector<HTMLButtonElement>('#btn-cancel-deposit')!).disabled = true;
 
     await onSubmit({ message, passwords: [alice, bob, carol] });
@@ -125,28 +124,28 @@ export function showRetrievePanel(
   panel.innerHTML = `
     <div class="panel-inner">
       <div class="panel-header">
-        <h2 class="panel-title" id="retrieve-title">Box ${boxNumber} — enter passwords to open</h2>
+        <h2 class="panel-title" id="retrieve-title">Box ${boxNumber} — ${t('enterPasswords')}</h2>
         <button class="btn-cancel-x" aria-label="Close panel">✕</button>
       </div>
-      <p class="panel-note">Enter at least 2 of the 3 passwords to unlock this box.</p>
+      <p class="panel-note">${t('thresholdOpen')}</p>
       <div class="password-row">
         <div class="form-group">
-          <label for="rpw-alice">Alice's key</label>
-          <input type="password" id="rpw-alice" autocomplete="off" placeholder="alice's password" />
+          <label for="rpw-alice">${t('aliceKey')}</label>
+          <input type="password" id="rpw-alice" autocomplete="off" placeholder="${t('alicePh')}" />
         </div>
         <div class="form-group">
-          <label for="rpw-bob">Bob's key</label>
-          <input type="password" id="rpw-bob" autocomplete="off" placeholder="bob's password" />
+          <label for="rpw-bob">${t('bobKey')}</label>
+          <input type="password" id="rpw-bob" autocomplete="off" placeholder="${t('bobPh')}" />
         </div>
         <div class="form-group">
-          <label for="rpw-carol">Carol's key</label>
-          <input type="password" id="rpw-carol" autocomplete="off" placeholder="carol's password" />
+          <label for="rpw-carol">${t('carolKey')}</label>
+          <input type="password" id="rpw-carol" autocomplete="off" placeholder="${t('carolPh')}" />
         </div>
       </div>
       <div id="pipeline-area"></div>
       <div class="form-actions">
-        <button class="btn-primary" id="btn-open">Open box</button>
-        <button class="btn-outline" id="btn-cancel-retrieve">Cancel</button>
+        <button class="btn-primary" id="btn-open">${t('openBtn')}</button>
+        <button class="btn-outline" id="btn-cancel-retrieve">${t('cancelBtn')}</button>
       </div>
       <div id="retrieve-result"></div>
     </div>
@@ -164,7 +163,7 @@ export function showRetrievePanel(
 
     const btn = panel.querySelector<HTMLButtonElement>('#btn-open')!;
     btn.disabled = true;
-    btn.textContent = 'Opening…';
+    btn.textContent = t('opening');
     const cancelBtn = panel.querySelector<HTMLButtonElement>('#btn-cancel-retrieve')!;
     cancelBtn.disabled = true;
 
@@ -172,9 +171,9 @@ export function showRetrievePanel(
       passwords: [aliceVal || null, bobVal || null, carolVal || null],
     });
 
-    // Re-enable for retry (success case: user may want to close; failure: allow retry)
+    // Re-enable for retry
     btn.disabled = false;
-    btn.textContent = 'Open box';
+    btn.textContent = t('openBtn');
     cancelBtn.disabled = false;
   });
 }
@@ -188,7 +187,7 @@ export function showDepositSuccess(panel: HTMLElement, boxNumber: string): void 
   const resultEl = panel.querySelector<HTMLElement>('#deposit-result')!;
   resultEl.innerHTML = `
     <div class="result-box result-success">
-      Secret sealed in box ${boxNumber}. ✓
+      ${t('sealedIn')} ${boxNumber}. ${t('sealedCheck')}
     </div>
   `;
 }

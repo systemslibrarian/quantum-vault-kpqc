@@ -3,35 +3,81 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Interactive threshold cryptography demo: AES-256-GCM + Shamir SSS + SMAUG-T KEM + HAETAE signature — all real KpqC WASM in the browser" />
-    <title>Quantum Vault</title>
+    <meta name="description" content="Browser-based demonstration of Korean post-quantum cryptographic algorithms (SMAUG-T KEM + HAETAE signature) compiled to WebAssembly — AES-256-GCM, Shamir SSS, real KpqC WASM" />
+    <title>Quantum Vault KPQC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div class="page-wrapper">
 
       <!-- Header -->
       <header class="site-header">
-        <h1 class="site-title">Quantum Vault</h1>
-        <p class="site-subtitle">
-          Select an empty box to store a secret. Select an occupied box to retrieve one.
+        <div class="lang-toggle" id="lang-toggle" aria-label="Language toggle">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button class="lang-btn" data-lang="ko">한국어</button>
+        </div>
+        <h1 class="site-title">Quantum Vault <span class="site-title-kpqc">KPQC</span></h1>
+        <p class="site-subtitle"
+           data-en="Browser-based demonstration of Korean post-quantum cryptographic algorithms compiled to WebAssembly."
+           data-ko="한국 양자내성 암호 알고리즘을 WebAssembly로 컴파일하여 브라우저에서 실행하는 데모입니다.">
+          Browser-based demonstration of Korean post-quantum cryptographic algorithms compiled to WebAssembly.
+        </p>
+        <p class="site-algorithms">
+          <span data-en="Featuring" data-ko="사용 알고리즘">Featuring</span>
+          <strong>SMAUG-T (스마우그-T)</strong>
+          <span data-en="and" data-ko="및">and</span>
+          <strong>HAETAE (해태)</strong>
+        </p>
+        <p class="site-greeting" lang="ko">
+          안녕하세요! 한국 연구진이 개발한 양자내성 암호 알고리즘을 소개하는 실험적 데모입니다.
         </p>
       </header>
 
-      <!-- Hint banner (shown on first load, hidden after dismiss) -->
+      <!-- Hint banner: shown on first load, dismissed after first visit -->
       <div class="hint-banner" id="hint-banner" role="status">
-        <span>
-          Boxes <strong>03</strong>, <strong>08</strong>, and <strong>10</strong>
-          contain demo secrets. Try opening one.
-        </span>
+        <div class="hint-content">
+          <p class="hint-lead"
+             data-en="Demo boxes are pre-loaded. Use any 2 of 3 passwords to open:"
+             data-ko="데모 보관함이 준비되어 있습니다. 3개 비밀번호 중 2개로 열 수 있습니다:">
+            Demo boxes are pre-loaded. Use any 2 of 3 passwords to open:
+          </p>
+          <table class="hint-passwords">
+            <tbody>
+              <tr>
+                <td class="hint-box-num">03</td>
+                <td><code>ruby</code></td>
+                <td><code>emerald</code></td>
+                <td><code>diamond</code></td>
+              </tr>
+              <tr>
+                <td class="hint-box-num">06</td>
+                <td><code>fortress</code></td>
+                <td><code>bastion</code></td>
+                <td><code>citadel</code></td>
+              </tr>
+              <tr>
+                <td class="hint-box-num">09</td>
+                <td><code>monday</code></td>
+                <td><code>tuesday</code></td>
+                <td><code>wednesday</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <button class="btn-dismiss" id="btn-dismiss-hint" aria-label="Dismiss hint">✕</button>
       </div>
 
       <!-- WASM loader (hidden once both modules are ready) -->
       <div id="wasm-loader" style="display:none;text-align:center;padding:1rem;color:#888;font-size:.9rem;">
-        Initializing KpqC modules (SMAUG-T + HAETAE)…
+        <span data-en="Initializing KpqC modules (SMAUG-T + HAETAE)…"
+              data-ko="KpqC 모듈 초기화 중 (SMAUG-T + HAETAE)…">
+          Initializing KpqC modules (SMAUG-T + HAETAE)…
+        </span>
       </div>
 
-      <!-- Vault wall: 12 safety deposit boxes -->
+      <!-- Vault wall: 9 safety deposit boxes (3×3) -->
       <section class="vault-section" aria-label="Vault wall">
         <div class="vault-wall" id="vault-wall" role="group" aria-label="Safety deposit boxes"></div>
       </section>
@@ -41,15 +87,121 @@
 
       <!-- Algorithm legend -->
       <div class="info-bar" aria-label="Cryptographic algorithms">
-        <span class="algo-badge"><span class="algo-dot"></span>AES-256-GCM</span>
-        <span class="algo-badge"><span class="algo-dot"></span>Shamir SSS / GF(2⁸)</span>
-        <span class="algo-badge"><span class="algo-dot"></span>SMAUG-T Level 1 KEM</span>
-        <span class="algo-badge"><span class="algo-dot"></span>HAETAE Mode 2 signature</span>
+        <span class="algo-badge algo-sym">
+          <span class="algo-dot"></span>AES-256-GCM
+        </span>
+        <span class="algo-badge algo-sym">
+          <span class="algo-dot"></span>Shamir SSS / GF(2⁸)
+        </span>
+        <span class="algo-badge algo-kem">
+          <span class="algo-dot"></span>SMAUG-T (스마우그-T) — KEM
+        </span>
+        <span class="algo-badge algo-sig">
+          <span class="algo-dot"></span>HAETAE (해태) — <span data-en="signature" data-ko="서명">signature</span>
+        </span>
       </div>
+
+      <!-- Research Origin -->
+      <section class="kpqc-panel research-origin" aria-labelledby="research-origin-title">
+        <h2 class="kpqc-panel-title" id="research-origin-title">
+          <span data-en="Research Origin" data-ko="연구 배경">Research Origin</span>
+        </h2>
+        <p data-en="This project demonstrates Korean post-quantum cryptographic algorithms compiled to WebAssembly for educational and experimental use."
+           data-ko="이 프로젝트는 교육 및 실험 목적으로 한국 양자내성 암호 알고리즘을 WebAssembly로 컴파일하여 시연합니다.">
+          This project demonstrates Korean post-quantum cryptographic algorithms compiled to WebAssembly for educational and experimental use.
+        </p>
+        <p class="kpqc-panel-subhead"
+           data-en="Algorithms included:"
+           data-ko="포함된 알고리즘:">
+          Algorithms included:
+        </p>
+        <ul class="kpqc-algo-list">
+          <li>
+            <strong class="algo-kem-tag">SMAUG-T (스마우그-T)</strong>
+            — <span data-en="lattice-based Key Encapsulation Mechanism (KEM)"
+                    data-ko="격자 기반 키 캡슐화 메커니즘 (KEM)">
+                lattice-based Key Encapsulation Mechanism (KEM)
+               </span>
+          </li>
+          <li>
+            <strong class="algo-sig-tag">HAETAE (해태)</strong>
+            — <span data-en="post-quantum digital signature algorithm"
+                    data-ko="양자내성 전자서명 알고리즘">
+                post-quantum digital signature algorithm
+               </span>
+          </li>
+        </ul>
+        <p class="kpqc-panel-attribution"
+           data-en="The implementations are derived from reference code produced by Korean cryptography researchers as part of the KpqC competition."
+           data-ko="이 구현은 KpqC 경쟁에 참여한 한국 암호 연구진이 작성한 레퍼런스 코드를 기반으로 합니다.">
+          The implementations are derived from reference code produced by Korean cryptography researchers as part of the KpqC competition.
+        </p>
+      </section>
+
+      <!-- How This Demo Works -->
+      <section class="kpqc-panel how-it-works" aria-labelledby="how-it-works-title">
+        <h2 class="kpqc-panel-title" id="how-it-works-title">
+          <span data-en="How This Demo Works" data-ko="데모 작동 방식">How This Demo Works</span>
+        </h2>
+        <div class="pipeline-diagram" aria-label="Architecture pipeline">
+          <div class="pd-step">Browser UI</div>
+          <div class="pd-arrow" aria-hidden="true">↓</div>
+          <div class="pd-step">WebAssembly (WASM)</div>
+          <div class="pd-arrow" aria-hidden="true">↓</div>
+          <div class="pd-step">Compiled C Reference Implementations</div>
+          <div class="pd-arrow" aria-hidden="true">↓</div>
+          <div class="pd-step pd-step-kpqc">SMAUG-T (스마우그-T) / HAETAE (해태)</div>
+        </div>
+        <p data-en="The browser interface interacts with WebAssembly modules compiled from the original C reference implementations of the algorithms. All cryptographic operations occur locally in the browser — no data is sent to any server."
+           data-ko="브라우저 인터페이스는 알고리즘의 C 레퍼런스 구현을 컴파일한 WebAssembly 모듈과 상호작용합니다. 모든 암호화 연산은 브라우저 내에서 로컬로 수행되며 서버로 데이터가 전송되지 않습니다.">
+          The browser interface interacts with WebAssembly modules compiled from the original C reference implementations of the algorithms. All cryptographic operations occur locally in the browser — no data is sent to any server.
+        </p>
+        <div class="demo-credentials">
+          <h3 class="demo-cred-title"
+              data-en="Demo box passwords (any 2 of 3 unlock each box)"
+              data-ko="데모 보관함 비밀번호 (3개 중 2개로 열림)">
+            Demo box passwords (any 2 of 3 unlock each box)
+          </h3>
+          <table class="cred-table">
+            <thead>
+              <tr>
+                <th data-en="Box" data-ko="보관함">Box</th>
+                <th data-en="Password 1" data-ko="비밀번호 1">Password 1</th>
+                <th data-en="Password 2" data-ko="비밀번호 2">Password 2</th>
+                <th data-en="Password 3" data-ko="비밀번호 3">Password 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="cred-box">03</td>
+                <td><code>ruby</code></td>
+                <td><code>emerald</code></td>
+                <td><code>diamond</code></td>
+              </tr>
+              <tr>
+                <td class="cred-box">06</td>
+                <td><code>fortress</code></td>
+                <td><code>bastion</code></td>
+                <td><code>citadel</code></td>
+              </tr>
+              <tr>
+                <td class="cred-box">09</td>
+                <td><code>monday</code></td>
+                <td><code>tuesday</code></td>
+                <td><code>wednesday</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <!-- Reset -->
       <div class="reset-area">
-        <button class="btn-reset" id="btn-reset">Reset vault to demo state</button>
+        <button class="btn-reset" id="btn-reset"
+                data-en="Reset vault to demo state"
+                data-ko="초기화">
+          Reset vault to demo state
+        </button>
       </div>
 
       <!-- Footer -->

@@ -10,7 +10,7 @@
 }
 
 html {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Noto Sans', 'Pretendard', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   background: #f0ede6;
   color: #2a2520;
@@ -95,11 +95,11 @@ body {
 
 .vault-wall {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 420px) {
   .vault-wall {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
@@ -134,7 +134,7 @@ body {
 }
 
 .deposit-box:focus-visible {
-  outline: 3px solid #534AB7;
+  outline: 3px solid #003478;
   outline-offset: 2px;
 }
 
@@ -148,9 +148,9 @@ body {
 }
 
 .deposit-box.selected {
-  border-color: #534AB7 !important;
+  border-color: #003478 !important;
   border-width: 3px;
-  box-shadow: 0 0 0 2px rgba(83, 74, 183, 0.25);
+  box-shadow: 0 0 0 2px rgba(0, 52, 120, 0.25);
 }
 
 .box-number {
@@ -304,8 +304,8 @@ body {
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #534AB7;
-  box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.15);
+  border-color: #003478;
+  box-shadow: 0 0 0 3px rgba(0, 52, 120, 0.15);
 }
 
 .field-error {
@@ -343,7 +343,7 @@ body {
 }
 
 .btn-primary {
-  background: #534AB7;
+  background: #003478;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -355,18 +355,18 @@ body {
 }
 
 .btn-primary:hover {
-  background: #4239a0;
+  background: #002460;
 }
 
 .btn-primary:disabled {
-  background: #9b95d0;
+  background: #7a96c0;
   cursor: not-allowed;
 }
 
 .btn-outline {
   background: none;
-  color: #534AB7;
-  border: 1px solid #534AB7;
+  color: #003478;
+  border: 1px solid #003478;
   border-radius: 5px;
   padding: 8px 18px;
   font-size: 0.9rem;
@@ -376,7 +376,7 @@ body {
 }
 
 .btn-outline:hover {
-  background: #f0eeff;
+  background: #e8eef8;
 }
 
 .btn-outline:disabled {
@@ -415,7 +415,7 @@ body {
 }
 
 .pipeline-step.active {
-  background: #534AB7;
+  background: #003478;
   color: #fff;
 }
 
@@ -510,9 +510,14 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #534AB7;
+  background: #5a5a5a;
   flex-shrink: 0;
 }
+
+/* KEM badges: KR blue; Signature badges: KR red */
+.algo-badge.algo-kem .algo-dot  { background: #003478; }
+.algo-badge.algo-sig .algo-dot  { background: #C60C30; }
+.algo-badge.algo-sym .algo-dot  { background: #4a7a60; }
 
 /* ---------- Reset Button ---------- */
 .reset-area {
@@ -545,4 +550,269 @@ body {
   color: #9a9490;
   border-top: 1px solid #ddd9d2;
   width: 100%;
+}
+
+/* ==========================================================
+   KR Redesign — Language Toggle
+   ========================================================== */
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.lang-btn {
+  background: none;
+  border: 1px solid #c8c4bc;
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #6a6460;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.lang-btn.active {
+  background: #003478;
+  color: #fff;
+  border-color: #003478;
+}
+
+.lang-btn:not(.active):hover {
+  background: #e8eef8;
+  border-color: #003478;
+  color: #003478;
+}
+
+.lang-sep {
+  color: #bbb;
+  font-size: 0.78rem;
+  user-select: none;
+}
+
+/* ==========================================================
+   KR Redesign — Header extras
+   ========================================================== */
+.site-title-kpqc {
+  color: #003478;
+  letter-spacing: 0.08em;
+}
+
+.site-algorithms {
+  font-size: 0.88rem;
+  color: #3a3530;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.site-greeting {
+  font-size: 0.82rem;
+  color: #6a6460;
+  margin-top: 6px;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================
+   KR Redesign — Hint banner password table
+   ========================================================== */
+.hint-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hint-lead {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.hint-passwords {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  width: 100%;
+}
+
+.hint-passwords td {
+  padding: 2px 10px 2px 0;
+  vertical-align: middle;
+}
+
+.hint-box-num {
+  font-weight: 700;
+  color: #003478;
+  font-family: 'Courier New', monospace;
+  width: 2.5em;
+}
+
+.hint-passwords code {
+  background: #dce8f5;
+  color: #003478;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+}
+
+/* ==========================================================
+   KR Redesign — KpqC Info panels (Research Origin + How It Works)
+   ========================================================== */
+.kpqc-panel {
+  background: #faf8f4;
+  border: 1px solid #d4d0c8;
+  border-radius: 8px;
+  padding: 20px 22px;
+  margin-top: 18px;
+}
+
+.kpqc-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1715;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #003478;
+  display: inline-block;
+}
+
+.kpqc-panel p {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #3a3530;
+  margin-top: 8px;
+}
+
+.kpqc-panel-subhead {
+  font-weight: 600;
+  color: #1a1715;
+  margin-top: 12px !important;
+  margin-bottom: 4px;
+}
+
+.kpqc-algo-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpqc-algo-list li {
+  font-size: 0.88rem;
+  color: #3a3530;
+  padding-left: 12px;
+  border-left: 3px solid #d4d0c8;
+}
+
+.algo-kem-tag {
+  color: #003478;
+}
+
+.algo-sig-tag {
+  color: #C60C30;
+}
+
+.kpqc-panel-attribution {
+  color: #6a6460 !important;
+  font-size: 0.82rem !important;
+  font-style: italic;
+  margin-top: 12px !important;
+}
+
+/* ==========================================================
+   KR Redesign — Architecture pipeline diagram (how-it-works)
+   ========================================================== */
+.pipeline-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin: 14px 0;
+  padding: 14px 16px;
+  background: #f0ede6;
+  border-radius: 6px;
+  border: 1px solid #d4d0c8;
+  font-size: 0.82rem;
+}
+
+.pd-step {
+  background: #fff;
+  border: 1px solid #c8c4bc;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-weight: 600;
+  color: #2a2520;
+  font-family: 'Noto Sans', 'Pretendard', system-ui, sans-serif;
+}
+
+.pd-step-kpqc {
+  border-color: #003478;
+  color: #003478;
+}
+
+.pd-arrow {
+  color: #aaa;
+  font-size: 1rem;
+  padding: 2px 18px;
+  user-select: none;
+}
+
+/* ==========================================================
+   KR Redesign — Demo credentials table
+   ========================================================== */
+.demo-credentials {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #d4d0c8;
+}
+
+.demo-cred-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1715;
+  margin-bottom: 10px;
+}
+
+.cred-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.cred-table th {
+  text-align: left;
+  padding: 5px 10px 5px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6a6460;
+  border-bottom: 1px solid #d4d0c8;
+}
+
+.cred-table td {
+  padding: 6px 10px 6px 6px;
+  vertical-align: middle;
+  border-bottom: 1px solid #ece8e1;
+}
+
+.cred-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cred-box {
+  font-weight: 700;
+  color: #003478;
+  font-family: 'Courier New', monospace;
+  width: 3.5em;
+}
+
+.cred-table code {
+  background: #dce8f5;
+  color: #003478;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 0.82rem;
 }

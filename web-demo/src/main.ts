@@ -18,8 +18,12 @@ import {
 import { animateSealPipeline, animateOpenPipeline } from './ui/pipeline-ui';
 import { revealMessage, showGibberish } from './ui/reveal';
 import { sleep } from './crypto/utils';
+import { setLang, t } from './i18n';
 
 async function init(): Promise<void> {
+  // Set up language toggle
+  setupLangToggle();
+
   // Load both KpqC WASM modules (SMAUG-T + HAETAE) before any vault operations
   const loaderEl = document.getElementById('wasm-loader');
   if (loaderEl) loaderEl.style.display = 'block';
@@ -122,7 +126,7 @@ async function init(): Promise<void> {
     await animateOpenPipeline(pipelineArea, !result.success);
 
     if (result.success) {
-      updateRetrieveTitle(panelEl, `Box ${boxNumber} — decrypted`);
+      updateRetrieveTitle(panelEl, `Box ${boxNumber} — ${t('decrypted')}`);
 
       const msgEl = document.createElement('div');
       msgEl.className = 'result-box result-success reveal-text';
@@ -133,17 +137,17 @@ async function init(): Promise<void> {
 
       const infoEl = document.createElement('p');
       infoEl.className = 'result-info';
-      infoEl.textContent = `${result.validShareCount} of 3 passwords correct — threshold met — secret recovered`;
+      infoEl.textContent = `${result.validShareCount} ${t('thresholdMet')}`;
       resultEl.appendChild(infoEl);
     } else {
-      updateRetrieveTitle(panelEl, `Box ${boxNumber} — access denied`);
+      updateRetrieveTitle(panelEl, `Box ${boxNumber} — ${t('accessDenied')}`);
 
       const msgEl = document.createElement('div');
       msgEl.className = 'result-box result-failure reveal-text';
       resultEl.replaceChildren(msgEl);
 
       await showGibberish(msgEl, result.gibberish);
-      msgEl.textContent = `ACCESS DENIED — need 2 of 3 passwords, only ${result.validShareCount} correct`;
+      msgEl.textContent = `${t('accessDeniedMsg')} — ${t('needPasswords')} ${result.validShareCount} ${t('correct')}`;
 
       // Pause so the user reads the denial, then reset inputs for retry
       await sleep(1500);
@@ -169,6 +173,23 @@ async function init(): Promise<void> {
 
   // Initial render
   renderWall();
+}
+
+// ---- Language toggle ----
+function setupLangToggle(): void {
+  document.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = (btn.dataset.lang ?? 'en') as 'en' | 'ko';
+      setLang(lang);
+      document.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+      });
+      document.querySelectorAll<HTMLElement>('[data-en]').forEach(el => {
+        const translated = el.getAttribute(`data-${lang}`);
+        if (translated !== null) el.textContent = translated;
+      });
+    });
+  });
 }
 
 // ---- Dismissible hint banner ----

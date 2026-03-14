@@ -47,8 +47,8 @@ These three boxes are available on every fresh page load:
 | Box | Secret | Alice's key | Bob's key | Carol's key |
 |-----|--------|-------------|-----------|-------------|
 | 03 | `The treasure map is under the old oak tree` | `ruby` | `emerald` | `diamond` |
-| 08 | `Launch code: ALPHA-7749-ZULU` | `fortress` | `bastion` | `citadel` |
-| 10 | `The meeting is moved to Friday at noon` | `monday` | `tuesday` | `wednesday` |
+| 06 | `Launch code: ALPHA-7749-ZULU` | `fortress` | `bastion` | `citadel` |
+| 09 | `The meeting is moved to Friday at noon` | `monday` | `tuesday` | `wednesday` |
 
 Any two of the three listed passwords unlock each box.  Entering only one is
 not enough, even with the correct password — this demonstrates the 2-of-3
