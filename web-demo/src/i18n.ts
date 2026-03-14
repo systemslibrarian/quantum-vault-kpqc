@@ -38,6 +38,10 @@ const strings: Record<string, { en: string; ko: string }> = {
   needPasswords:     { en: 'need 2 of 3 passwords, only',
                        ko: '필요: 2개, 현재 유효:' },
   correct:           { en: 'correct',                  ko: '개' },
+  occupied:          { en: 'occupied',                 ko: '사용 중' },
+  empty:             { en: 'empty',                    ko: '비어 있음' },
+  boxLabel:          { en: 'Box',                      ko: '보관함' },
+  selectedLabel:     { en: 'selected',                 ko: '선택됨' },
 };
 
 let _lang: 'en' | 'ko' = 'en';

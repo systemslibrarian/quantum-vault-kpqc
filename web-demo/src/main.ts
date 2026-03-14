@@ -21,8 +21,7 @@ import { sleep } from './crypto/utils';
 import { setLang, t } from './i18n';
 
 async function init(): Promise<void> {
-  // Set up language toggle
-  setupLangToggle();
+  // Language toggle is wired up after renderWall is defined (so it can trigger re-render)
 
   // Load both KpqC WASM modules (SMAUG-T + HAETAE) before any vault operations
   const loaderEl = document.getElementById('wasm-loader');
@@ -171,12 +170,15 @@ async function init(): Promise<void> {
     renderWall();
   });
 
+  // Wire language toggle now that renderWall is in scope
+  setupLangToggle(() => renderWall());
+
   // Initial render
   renderWall();
 }
 
 // ---- Language toggle ----
-function setupLangToggle(): void {
+function setupLangToggle(onLangChange?: () => void): void {
   document.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const lang = (btn.dataset.lang ?? 'en') as 'en' | 'ko';
@@ -188,6 +190,7 @@ function setupLangToggle(): void {
         const translated = el.getAttribute(`data-${lang}`);
         if (translated !== null) el.textContent = translated;
       });
+      onLangChange?.();
     });
   });
 }

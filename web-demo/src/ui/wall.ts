@@ -1,5 +1,7 @@
 // Render the 3×3 safety deposit box wall and handle box selection
 
+import { t } from '../i18n';
+
 export function renderVaultWall(
   container: HTMLElement,
   boxes: Record<string, unknown>,
@@ -26,13 +28,13 @@ export function renderVaultWall(
     box.setAttribute('tabindex', '0');
     box.setAttribute(
       'aria-label',
-      `Box ${num}, ${isOccupied ? 'occupied' : 'empty'}${isSelected ? ', selected' : ''}`,
+      `${t('boxLabel')} ${num}, ${isOccupied ? t('occupied') : t('empty')}${isSelected ? ', ' + t('selectedLabel') : ''}`,
     );
 
     box.innerHTML = `
       <div class="box-number">${num}</div>
       <div class="keyhole" aria-hidden="true"></div>
-      <div class="box-status">${isOccupied ? 'occupied' : 'empty'}</div>
+      <div class="box-status">${isOccupied ? t('occupied') : t('empty')}</div>
     `;
 
     box.addEventListener('click', () => onBoxClick(num));

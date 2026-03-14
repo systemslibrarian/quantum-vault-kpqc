@@ -108,7 +108,7 @@ body {
 
 /* ---------- Deposit Box ---------- */
 .deposit-box {
-  aspect-ratio: 1.15 / 1;
+  aspect-ratio: 1 / 0.85;
   border-radius: 6px;
   border: 2px solid #888780;
   background: #D3D1C7;
@@ -116,7 +116,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   cursor: pointer;
   user-select: none;
   transition: border-color 200ms, box-shadow 200ms, transform 100ms;
@@ -154,7 +154,7 @@ body {
 }
 
 .box-number {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #4a4740;
@@ -167,9 +167,9 @@ body {
 }
 
 .box-status {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #7a7870;
 }
@@ -180,20 +180,20 @@ body {
 
 /* ---------- Keyhole (CSS shape) ---------- */
 .keyhole {
-  width: 16px;
-  height: 18px;
+  width: 12px;
+  height: 14px;
   position: relative;
 }
 
 .keyhole::before {
   content: '';
-  width: 12px;
-  height: 12px;
+  width: 9px;
+  height: 9px;
   border: 2px solid currentColor;
   border-radius: 50%;
   position: absolute;
   top: 0;
-  left: 2px;
+  left: 1px;
   color: #7a7870;
 }
 
@@ -203,12 +203,12 @@ body {
 
 .keyhole::after {
   content: '';
-  width: 4px;
-  height: 8px;
+  width: 3px;
+  height: 6px;
   background: currentColor;
   position: absolute;
-  top: 10px;
-  left: 6px;
+  top: 8px;
+  left: 4px;
   border-radius: 0 0 2px 2px;
   color: #7a7870;
 }
