@@ -51,3 +51,29 @@ jobs:
         run: |
           cargo install cargo-audit --locked
           cargo audit
+
+  test-web-demo:
+    name: Web demo — Vitest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web-demo/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web-demo
+        run: npm ci
+
+      - name: Run tests
+        working-directory: web-demo
+        run: npm run test
+
+      - name: Type-check + build
+        working-directory: web-demo
+        run: npm run build

@@ -252,8 +252,13 @@ derives entirely from the secrecy of `key` (the KEM shared secret).
 ### 6.4 Shamir Secret Sharing over GF(2⁸)
 
 **Field specification:**  
-$\text{GF}(2^8)$ with irreducible polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$
-(hexadecimal representation: `0x11b`).
+$\text{GF}(2^8)$ with irreducible polynomial $p(x) = x^8 + x^4 + x^3 + x^2 + 1$
+(hexadecimal representation: `0x11d`).
+
+> **Note:** The AES field polynomial $x^8 + x^4 + x^3 + x + 1$ (`0x11b`) is
+> irreducible but the element $2$ has multiplicative order 51 in that field, not
+> 255. Using it with a generator-2 EXP/LOG table silently corrupts the table;
+> `0x11d` is used here because 2 is a primitive element of order 255.
 
 **Split:**  
 For each byte $b$ of the secret, sample a random polynomial of degree $t-1$:

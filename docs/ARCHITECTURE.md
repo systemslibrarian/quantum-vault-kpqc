@@ -6,209 +6,144 @@ bridge, and browser-rendered demo UI.
 
 ---
 
-## 1. Full Pipeline: C → Rust → WASM → TypeScript → Browser
+## 1. System Overview
+
+There are two independent build paths that share the vendor C sources:
+
+- **Web demo** — C reference implementations compiled directly to WebAssembly
+  via Emscripten; TypeScript calls the WASM exports from a Vite + vanilla-TS
+  browser app.
+- **Rust CLI** — C reference implementations linked into `qv-core` via the
+  `cc` crate; the binary is `qv-cli`.
 
 ```mermaid
 flowchart TD
-    subgraph C_LIBS["Vendor C Libraries (kpqc-native feature)"]
-        ST["SMAUG-T 1.1.1\nreference_implementation/src/*.c\n(KEM — encapsulate / decapsulate)"]
-        HT["HAETAE 1.1.2\nreference_implementation/src/*.c\n(Signature — sign / verify)"]
-        SH["randombytes_shim.c\n(OS entropy: getrandom / arc4random)"]
+    subgraph C_SMAUG["vendor C: SMAUG-T 1.1.1\nreference_implementation/src/*.c"]
+    end
+    subgraph C_HAETAE["vendor C: HAETAE 1.1.2\nreference_implementation/src/*.c"]
     end
 
-    subgraph RUST["Rust crate: qv-core"]
-        FFI["kpqc_ffi.rs\nunsafe extern C wrappers\n(safe public API boundary)"]
-        KEM["crypto/backend/kpqc.rs\nKpqcKem + KpqcSignature\nimpl Kem + Signature traits"]
-        CORE["encrypt.rs / decrypt.rs\nAES-256-GCM + Shamir SSS\n+ container serialisation"]
-        LIB["lib.rs\npublic API:\nencrypt_bytes / decrypt_bytes\nencrypt_with_threshold / decrypt_with_threshold"]
+    subgraph WASM_BUILD["wasm/ — Emscripten (emcc -O2)"]
+        RB["randombytes_wasm.c\n→ crypto.getRandomValues"]
+        SE["smaug_exports.c\nkeypair / encapsulate / decapsulate"]
+        HE["haetae_exports.c\nkeypair / sign / verify"]
+        DIST["wasm/dist/\nsmaug.{js,wasm}  haetae.{js,wasm}"]
     end
 
-    subgraph DEV_BACKEND["Dev Backend (dev-backend feature, default)"]
-        DEV["crypto/backend/dev.rs\nDevKem / DevSignature\n(deterministic, test-only)"]
+    subgraph WEB["web-demo/src/crypto/  (Vite + TypeScript)"]
+        SW["smaug.ts — WASM wrapper\n(Level 1: PK=672B CT=672B SS=32B)"]
+        HW["haetae.ts — WASM wrapper\n(Mode 2: PK=992B maxSig=1474B)"]
+        KW["keywrap.ts\nSMAUG-T KEM + PBKDF2 share wrapping"]
+        SH["shamir.ts\nGF(2⁸) SSS — poly 0x11d"]
+        AES["aes.ts\nAES-256-GCM via Web Crypto API"]
+        PL["pipeline.ts\nsealMessage / openBox"]
     end
 
-    subgraph WASM_BUILD["WASM build (wasm feature)"]
-        WASM["wasm.rs — #[wasm_bindgen]\nqv_encrypt / qv_decrypt\nexposed to JavaScript"]
-        PKG["public/wasm-pkg/\nqv_core_bg.wasm + .js glue"]
+    subgraph RUST["Rust: crates/qv-core  (CLI)"]
+        FFI["kpqc_ffi.rs\nunsafe extern C boundary\n(Level 3: PK=1088B CT=992B)"]
+        CORE["encrypt.rs / decrypt.rs\nAES-256-GCM + Shamir SSS"]
+        CLI["qv-cli binary"]
     end
 
-    subgraph CLI["qv-cli crate"]
-        MAIN["main.rs\nencrypt-file / decrypt-file\nkeygen subcommands"]
-    end
+    C_SMAUG -->|"emcc"| SE
+    C_HAETAE -->|"emcc"| HE
+    RB --> SE
+    SE & HE --> DIST
+    DIST -->|"committed to web-demo/public/\n+ src/crypto/wasm/"| SW & HW
+    SW --> KW
+    HW --> PL
+    KW --> PL
+    SH --> PL
+    AES --> PL
 
-    subgraph TSWEB["TypeScript / Next.js (web-demo)"]
-        BRIDGE["wasm-bridge.ts\nloads WASM module\nconverts Rust JSON ↔ TS types"]
-        MOCK["mock-backend.ts\nCryptoBackend implementation\nreal AES-GCM + real GF(256) Shamir\nmocked KEM / Sig sizes"]
-        IDX["crypto/index.ts\nexports active backend\n← swap point"]
-        DECK["DeckOfCards.tsx\norchestrates encrypt/decrypt pipeline\n13×4 card grid + animations"]
-        PAGE["page.tsx\nDeckOfCards + CryptoZoo"]
-    end
-
-    ST & HT & SH -->|"cc crate (build.rs)"| FFI
-    FFI --> KEM
-    DEV --> CORE
-    KEM --> CORE
-    CORE --> LIB
-    LIB -->|"wasm feature"| WASM
-    WASM --> PKG
-    PKG --> BRIDGE
-    LIB -->|"binary"| MAIN
-    BRIDGE -->|"future swap"| IDX
-    MOCK --> IDX
-    IDX --> DECK
-    DECK --> PAGE
+    C_SMAUG -->|"cc crate / build.rs"| FFI
+    C_HAETAE -->|"cc crate / build.rs"| FFI
+    FFI --> CORE
+    CORE --> CLI
 ```
 
 ---
 
-## 2. Mock Backend Data Flow
+## 2. Web Demo Seal / Open Data Flow
 
 ```mermaid
 sequenceDiagram
-    participant UI as DeckOfCards
-    participant Hook as useVault hook
-    participant Backend as MockBackend
-    participant SubtleCrypto as Web Crypto API
+    participant UI as vault UI (panel.ts)
+    participant PL as pipeline.ts
+    participant KW as keywrap.ts
+    participant SMAUG as smaug.ts (WASM)
+    participant HAETAE as haetae.ts (WASM)
+    participant WebCrypto as Web Crypto API
 
-    UI->>Hook: encrypt(permutationBytes)
-    Hook->>Backend: generateKey()
-    Backend->>SubtleCrypto: getRandomValues(32)
-    SubtleCrypto-->>Backend: aesKey[32]
-    Backend-->>Hook: aesKey
+    UI->>PL: sealMessage(message, [pw1, pw2, pw3])
+    PL->>WebCrypto: generateKey() + encrypt(plaintext) → {ciphertext, nonce}
+    PL->>PL: splitSecret(aesKey, threshold=2, n=3) → [s1, s2, s3]
 
-    Hook->>Backend: encrypt(plaintext, aesKey)
-    Backend->>SubtleCrypto: subtle.encrypt("AES-GCM", key, plaintext)
-    SubtleCrypto-->>Backend: {ciphertext, nonce}
-    Backend-->>Hook: {ciphertext, nonce}
-
-    Hook->>Backend: shamirSplit(aesKey, threshold, totalShares)
-    Note over Backend: GF(256) polynomial evaluation<br/>for each of n shares
-    Backend-->>Hook: Share[] [{index, data}]
-
-    loop for each share
-        Hook->>Backend: kemEncapsulate(recipientPublicKey)
-        Note over Backend: Simulated: random CT + SS<br/>(SMAUG-T realistic sizes)
-        Backend-->>Hook: {ciphertext, sharedSecret}
+    loop for each share / password
+        PL->>KW: wrapShare(shareData, password)
+        KW->>SMAUG: smaugKeypair() → {pk, sk}
+        KW->>SMAUG: smaugEncapsulate(pk) → {kemCT, sharedSecret}
+        KW->>WebCrypto: AES-GCM(sharedSecret) encrypt share → wrappedShare
+        KW->>WebCrypto: PBKDF2(password, salt, 100k) → passwordKey
+        KW->>WebCrypto: AES-GCM(passwordKey) encrypt sk → wrappedSK
     end
 
-    Hook->>Backend: sign(containerBytes, signingKey)
-    Note over Backend: Simulated: SHA-256(SK ‖ message)<br/>(HAETAE realistic size)
-    Backend-->>Hook: signature[64]
+    PL->>HAETAE: haetaeKeypair() → {sigPK, sigSK}
+    PL->>HAETAE: haetaeSign(containerBytes, sigSK) → signature
+    PL-->>UI: SealedBox {ciphertext, nonce, wrappedShares[3], signature, sigPK}
 
-    Hook-->>UI: VaultState {encrypted, shares, seal}
+    UI->>PL: openBox(box, [pw1, pw2, null])
+    PL->>HAETAE: haetaeVerify(sig, containerBytes, sigPK) → reject if false
 
-    UI->>Hook: decrypt(selectedShares)
-    Hook->>Backend: verify(containerBytes, signature, verifyKey)
-    Backend-->>Hook: true | false
-
-    loop for each selected share
-        Hook->>Backend: kemDecapsulate(ciphertext, privateKey)
-        Backend-->>Hook: sharedSecret
+    loop for each non-null password
+        PL->>KW: unwrapShare(wrappedShare, password)
+        KW->>WebCrypto: PBKDF2(password, salt) → passwordKey
+        KW->>WebCrypto: AES-GCM decrypt wrappedSK → sk  ← throws if wrong pw
+        KW->>SMAUG: smaugDecapsulate(kemCT, sk) → sharedSecret
+        KW->>WebCrypto: AES-GCM(sharedSecret) decrypt → shareData
     end
 
-    Hook->>Backend: shamirReconstruct(shares, threshold)
-    Note over Backend: Lagrange interpolation over GF(256)
-    Backend-->>Hook: aesKey
-
-    Hook->>Backend: decrypt(ciphertext, nonce, aesKey)
-    Backend->>SubtleCrypto: subtle.decrypt("AES-GCM", key, ciphertext)
-    SubtleCrypto-->>Backend: plaintext
-    Backend-->>Hook: plaintext
-    Hook-->>UI: VaultState {decrypted, deck}
+    PL->>PL: reconstructSecret([s1, s2]) → aesKey
+    PL->>WebCrypto: AES-GCM decrypt ciphertext → plaintext  ← throws if wrong key
+    PL-->>UI: {success: true, message, validShareCount: 2}
 ```
 
----
-
-## 3. Backend Interface Contract
-
-The `CryptoBackend` interface in [web-demo/src/crypto/types.ts](../web-demo/src/crypto/types.ts) defines the contract every backend implementation must satisfy:
+### Key type definitions
 
 ```typescript
-interface CryptoBackend {
-  // ── Key generation ─────────────────────────────────────────────────────
-
-  /** Generate a random 256-bit AES key. */
-  generateKey(): Promise<Uint8Array>;                       // 32 bytes
-
-  /** Generate a KEM keypair. */
-  kemKeygen(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }>;
-
-  /** Generate a signature keypair. */
-  sigKeygen(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }>;
-
-  // ── Symmetric encryption ───────────────────────────────────────────────
-
-  /** AES-256-GCM encrypt. Returns { ciphertext, nonce }. */
-  encrypt(plaintext: Uint8Array, key: Uint8Array): Promise<{
-    ciphertext: Uint8Array;
-    nonce:      Uint8Array;   // 12 bytes
-  }>;
-
-  /** AES-256-GCM decrypt. */
-  decrypt(
-    ciphertext: Uint8Array,
-    nonce:      Uint8Array,
-    key:        Uint8Array,
-  ): Promise<Uint8Array>;
-
-  // ── Shamir Secret Sharing ──────────────────────────────────────────────
-
-  /** Split secret into n shares, threshold t required to reconstruct. */
-  shamirSplit(
-    secret:      Uint8Array,
-    totalShares: number,
-    threshold:   number,
-  ): Promise<Share[]>;
-
-  /** Reconstruct secret from at least t shares. */
-  shamirReconstruct(shares: Share[], threshold: number): Promise<Uint8Array>;
-
-  // ── KEM (Key Encapsulation Mechanism) ──────────────────────────────────
-
-  /** Encapsulate a shared secret under publicKey. */
-  kemEncapsulate(publicKey: Uint8Array): Promise<{
-    ciphertext:   Uint8Array;
-    sharedSecret: Uint8Array;
-  }>;
-
-  /** Decapsulate a shared secret using privateKey. */
-  kemDecapsulate(
-    ciphertext:  Uint8Array,
-    privateKey:  Uint8Array,
-  ): Promise<Uint8Array>;
-
-  // ── Digital signature ──────────────────────────────────────────────────
-
-  /** Sign message with signingKey. */
-  sign(message: Uint8Array, signingKey: Uint8Array): Promise<Uint8Array>;
-
-  /** Verify signature against verificationKey. Returns true if valid. */
-  verify(
-    message:           Uint8Array,
-    signature:         Uint8Array,
-    verificationKey:   Uint8Array,
-  ): Promise<boolean>;
+interface SealedBox {
+  ciphertext:   Uint8Array;   // AES-256-GCM output (payload + 16-byte tag)
+  nonce:        Uint8Array;   // 12-byte random IV
+  wrappedShares: WrappedShare[]; // one per keyholder (always 3)
+  signature:    Uint8Array;   // HAETAE Mode 2 signature
+  sigPublicKey: Uint8Array;   // HAETAE public key (992 B)
+  createdAt:    string;       // ISO 8601 timestamp
 }
 
-interface Share {
-  index: number;       // 1-based share index (never 0)
-  data:  Uint8Array;   // share payload — same size as the secret
+interface WrappedShare {
+  salt:             Uint8Array; // 16-byte PBKDF2 salt
+  kemCiphertext:    Uint8Array; // SMAUG-T KEM ciphertext (672 B)
+  wrappedShare:     Uint8Array; // AES-GCM encrypted Shamir share
+  shareNonce:       Uint8Array; // 12-byte nonce for share encryption
+  publicKey:        Uint8Array; // SMAUG-T public key (672 B)
+  wrappedSecretKey: Uint8Array; // AES-GCM encrypted SMAUG-T SK
+  skNonce:          Uint8Array; // 12-byte nonce for SK encryption
 }
+
+type OpenResult =
+  | { success: true;  message: string;       validShareCount: number }
+  | { success: false; gibberish: Uint8Array; validShareCount: number };
 ```
 
-### WASM Swap-In Point
+### Note on omitted AAD in AES-GCM calls
 
-[web-demo/src/crypto/index.ts](../web-demo/src/crypto/index.ts) is the **only file that must change** to switch from mock to WASM:
-
-```typescript
-// Mock (current):
-export { mockBackend as backend } from './mock-backend';
-
-// WASM (after `npm run wasm:build`):
-export { wasmBackend as backend } from './wasm-backend';
-```
-
-The WASM backend must implement `CryptoBackend` using `qv_encrypt` / `qv_decrypt` exported from `public/wasm-pkg/qv_core.js`.
+`aes.ts` and `keywrap.ts` call `SubtleCrypto.encrypt / decrypt` without
+Additional Authenticated Data. This is intentional: the HAETAE signature in
+`pipeline.ts` covers `buildContainerData(ciphertext, nonce, wrappedShares)` —
+the concatenation of every byte of every field — so any substitution or
+cross-container transplant is caught before decryption. Inner AES-GCM calls
+(share wrap, SK wrap) are protected by the outer HAETAE verify; they do not
+need independent AAD.
 
 ---
 
@@ -274,18 +209,20 @@ byte-identical AAD on both sides of the WASM boundary.
 
 ## 6. Security Level Parameters
 
-All security parameters are fixed at **Level 3** (NIST equivalent):
+The Rust `qv-core` CLI uses **Level 3** (NIST equivalent ~AES-192) via the
+`mode3` C symbols.  The **web demo** uses **SMAUG-T Level 1** and **HAETAE
+Mode 2** (NIST equivalent ~AES-128) for smaller key / ciphertext sizes.
 
-| Parameter | Value | Source |
-|-----------|-------|--------|
-| SMAUG-T public key | 1088 bytes | `params.h`, K=3 |
-| SMAUG-T secret key | 1312 bytes | `params.h`, K=3 |
-| SMAUG-T ciphertext | 992 bytes | `params.h`, K=3 |
-| SMAUG-T shared secret | 32 bytes | all levels |
-| HAETAE public key | 1472 bytes | 32 + 3×480 |
-| HAETAE secret key | 2112 bytes | 1472 + 5×64 + 3×96 + 32 |
-| HAETAE max signature | 2349 bytes | `HAETAE_CRYPTO_BYTES`, mode3 |
-| AES-GCM key | 256 bits | |
-| AES-GCM nonce | 96 bits (12 bytes) | |
-| AES-GCM tag | 128 bits (16 bytes) | |
-| Shamir field | GF(256) | |
+| Parameter | Rust CLI (Level 3) | Web Demo (Level 1 / Mode 2) |
+|-----------|-------------------|----------------------------|
+| SMAUG-T public key | 1088 B | 672 B |
+| SMAUG-T secret key | 1312 B | 832 B |
+| SMAUG-T ciphertext | 992 B | 672 B |
+| SMAUG-T shared secret | 32 B | 32 B |
+| HAETAE public key | 1472 B | 992 B |
+| HAETAE secret key | 2112 B | 1408 B |
+| HAETAE max signature | 2349 B | 1474 B |
+| AES-GCM key | 256 bits | 256 bits |
+| AES-GCM nonce | 96 bits (12 B) | 96 bits (12 B) |
+| AES-GCM tag | 128 bits (16 B) | 128 bits (16 B) |
+| Shamir field | GF(256) poly `0x11d` | GF(256) poly `0x11d` |

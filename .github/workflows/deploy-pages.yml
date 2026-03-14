@@ -40,6 +40,10 @@ jobs:
         working-directory: web-demo
         run: npm ci
 
+      - name: Run tests
+        working-directory: web-demo
+        run: npm run test
+
       - name: Build Vite bundle
         working-directory: web-demo
         run: npm run build
