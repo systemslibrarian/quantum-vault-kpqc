@@ -128,3 +128,113 @@ impl QuantumVaultContainer {
         Ok(c)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        crypto::backend::dev::{DevKem, DevSignature},
+        crypto::kem::Kem,
+        crypto::signature::Signature,
+        encrypt::encrypt_file,
+        EncryptOptions, CONTAINER_VERSION,
+    };
+
+    /// Build a minimal valid container for use by multiple tests.
+    fn make_valid_container() -> QuantumVaultContainer {
+        let kem = DevKem;
+        let sig = DevSignature;
+        let (pk, _sk) = kem.generate_keypair().unwrap();
+        let (sig_pub_key, sig_priv_key) = sig.generate_keypair().unwrap();
+        let opts = EncryptOptions {
+            threshold: 2,
+            share_count: 2,
+            recipient_public_keys: vec![pk.clone(), pk],
+            signer_private_key: sig_priv_key,
+        };
+        let _ = sig_pub_key; // used in decrypt, not here
+        encrypt_file(b"unit test payload", &opts, &kem, &sig).unwrap()
+    }
+
+    #[test]
+    fn round_trip_to_and_from_bytes() {
+        let c = make_valid_container();
+        let bytes = c.to_bytes().unwrap();
+        let c2 = QuantumVaultContainer::from_bytes(&bytes).unwrap();
+        assert_eq!(c.magic, c2.magic);
+        assert_eq!(c.version, c2.version);
+        assert_eq!(c.threshold, c2.threshold);
+        assert_eq!(c.share_count, c2.share_count);
+        assert_eq!(c.nonce, c2.nonce);
+        assert_eq!(c.ciphertext, c2.ciphertext);
+    }
+
+    #[test]
+    fn rejects_wrong_magic() {
+        let mut c = make_valid_container();
+        c.magic = "WRONG".to_string();
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_wrong_version() {
+        let mut c = make_valid_container();
+        c.version = CONTAINER_VERSION + 1;
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_threshold_below_two() {
+        let mut c = make_valid_container();
+        c.threshold = 1;
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_share_count_below_threshold() {
+        let mut c = make_valid_container();
+        c.share_count = c.threshold - 1; // share_count < threshold
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_wrong_nonce_length() {
+        let mut c = make_valid_container();
+        c.nonce = vec![0u8; 8]; // should be 12
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_shares_len_mismatch() {
+        let mut c = make_valid_container();
+        c.shares.pop(); // one fewer share than share_count
+        let bytes = c.to_bytes().unwrap();
+        assert!(QuantumVaultContainer::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_oversized_container() {
+        // 65 MiB — above the 64 MiB cap in from_bytes.
+        let big = vec![0u8; 65 * 1024 * 1024];
+        assert!(QuantumVaultContainer::from_bytes(&big).is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_utf8_json() {
+        assert!(QuantumVaultContainer::from_bytes(&[0xff, 0xfe, 0x00]).is_err());
+    }
+
+    #[test]
+    fn rejects_empty_input() {
+        assert!(QuantumVaultContainer::from_bytes(b"").is_err());
+    }
+}

@@ -240,4 +240,50 @@ mod tests {
         let result = crate::decrypt::decrypt_file(&container, &dec_opts, &kem, &sig);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn xor_protect_round_trip() {
+        // Applying xor_protect twice with the same key must restore the input.
+        let data: Vec<u8> = (0u8..80).collect(); // >32 bytes exercises multi-block
+        let key = b"test-key-material";
+        let protected = xor_protect(&data, key).unwrap();
+        let restored = xor_protect(&protected, key).unwrap();
+        assert_eq!(restored, data);
+    }
+
+    #[test]
+    fn xor_protect_empty_data() {
+        let result = xor_protect(&[], b"any-key").unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn aes_aad_is_deterministic() {
+        let a = aes_aad(1, 2, "DevKem", "DevSignature");
+        let b = aes_aad(1, 2, "DevKem", "DevSignature");
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn aes_aad_differs_on_algorithm_change() {
+        let a = aes_aad(1, 2, "DevKem", "DevSignature");
+        let b = aes_aad(1, 2, "SMAUG-T-3", "DevSignature");
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn rejects_mismatched_recipient_key_count() {
+        let kem = DevKem;
+        let sig = DevSignature;
+        let (pk, _sk) = kem.generate_keypair().unwrap();
+        let (_sig_pub, sig_priv) = sig.generate_keypair().unwrap();
+        // share_count=2 but only one public key supplied
+        let opts = EncryptOptions {
+            threshold: 2,
+            share_count: 2,
+            recipient_public_keys: vec![pk],
+            signer_private_key: sig_priv,
+        };
+        assert!(encrypt_file(b"hello", &opts, &kem, &sig).is_err());
+    }
 }

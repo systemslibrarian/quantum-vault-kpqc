@@ -254,4 +254,90 @@ mod tests {
         assert!(split_secret(b"x", 2, 3).is_err()); // share_count < threshold
         assert!(split_secret(b"", 3, 2).is_err());  // empty secret
     }
+
+    #[test]
+    fn round_trip_2_of_2() {
+        let secret = b"minimum scheme";
+        let shares = split_secret(secret, 2, 2).unwrap();
+        assert_eq!(shares.len(), 2);
+        let out = reconstruct_secret(&shares).unwrap();
+        assert_eq!(out, secret);
+    }
+
+    #[test]
+    fn round_trip_single_byte_secret() {
+        let secret = &[0xABu8];
+        let shares = split_secret(secret, 3, 2).unwrap();
+        let out = reconstruct_secret(&shares[0..2]).unwrap();
+        assert_eq!(out, secret);
+    }
+
+    #[test]
+    fn round_trip_64_byte_secret() {
+        // Exercises the multi-block case in xor_protect.
+        let secret: Vec<u8> = (0u8..64).collect();
+        let shares = split_secret(&secret, 4, 3).unwrap();
+        let subset = vec![shares[0].clone(), shares[1].clone(), shares[3].clone()];
+        let out = reconstruct_secret(&subset).unwrap();
+        assert_eq!(out, secret);
+    }
+
+    #[test]
+    fn rejects_zero_index_share() {
+        let shares = vec![Share { index: 0, data: vec![1, 2, 3] }];
+        assert!(reconstruct_secret(&shares).is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_share_indices() {
+        let shares = vec![
+            Share { index: 1, data: vec![10, 20] },
+            Share { index: 1, data: vec![30, 40] },
+        ];
+        assert!(reconstruct_secret(&shares).is_err());
+    }
+
+    #[test]
+    fn rejects_inconsistent_payload_lengths() {
+        let shares = vec![
+            Share { index: 1, data: vec![10, 20, 30] },
+            Share { index: 2, data: vec![40, 50] },
+        ];
+        assert!(reconstruct_secret(&shares).is_err());
+    }
+
+    #[test]
+    fn rejects_empty_share_list() {
+        assert!(reconstruct_secret(&[]).is_err());
+    }
+
+    #[test]
+    fn share_indices_are_one_based() {
+        let shares = split_secret(b"test", 5, 3).unwrap();
+        for (i, s) in shares.iter().enumerate() {
+            assert_eq!(s.index, (i + 1) as u8);
+        }
+    }
+
+    #[test]
+    fn gf_mul_identity() {
+        // a * 1 == a for all non-zero a
+        for a in 1u8..=255 {
+            assert_eq!(gf_mul(a, 1), a);
+        }
+    }
+
+    #[test]
+    fn gf_mul_commutativity() {
+        assert_eq!(gf_mul(7, 13), gf_mul(13, 7));
+        assert_eq!(gf_mul(200, 37), gf_mul(37, 200));
+    }
+
+    #[test]
+    fn gf_inv_correctness() {
+        // a * inv(a) == 1 for all non-zero a
+        for a in 1u8..=255 {
+            assert_eq!(gf_mul(a, gf_inv(a)), 1, "failed for a={}", a);
+        }
+    }
 }

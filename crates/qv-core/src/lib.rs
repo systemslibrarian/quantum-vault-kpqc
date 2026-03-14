@@ -267,4 +267,64 @@ mod tests {
         let result = decrypt_with_threshold(&ct, &keys[..2], &sig_pub);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn encrypt_decrypt_empty_plaintext() {
+        // Empty plaintext is a valid AES-GCM input — should round-trip cleanly.
+        let (ct, keys, sig_pub) = encrypt_bytes(b"").unwrap();
+        let recovered = decrypt_bytes(&ct, &keys, &sig_pub).unwrap();
+        assert_eq!(recovered, b"");
+    }
+
+    #[test]
+    fn encrypt_decrypt_large_plaintext() {
+        let plaintext = vec![0xABu8; 1_000_000]; // 1 MB
+        let (ct, keys, sig_pub) = encrypt_bytes(&plaintext).unwrap();
+        let recovered = decrypt_bytes(&ct, &keys, &sig_pub).unwrap();
+        assert_eq!(recovered, plaintext);
+    }
+
+    #[test]
+    fn decrypt_rejects_corrupted_json() {
+        let (ct, keys, sig_pub) = encrypt_bytes(b"some data").unwrap();
+        let mut bad = ct.clone();
+        // Corrupt a byte near the start to break JSON parsing.
+        bad[5] ^= 0xff;
+        assert!(decrypt_bytes(&bad, &keys, &sig_pub).is_err());
+    }
+
+    #[test]
+    fn decrypt_rejects_wrong_sig_pubkey() {
+        let plaintext = b"wrong key test";
+        let (ct, keys, _sig_pub) = encrypt_bytes(plaintext).unwrap();
+        // Generate a fresh, unrelated sig keypair and use its public key.
+        use crypto::backend::dev::DevSignature;
+        use crypto::signature::Signature;
+        let (wrong_pub, _) = DevSignature.generate_keypair().unwrap();
+        let result = decrypt_bytes(&ct, &keys, &wrong_pub);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn encrypt_decrypt_binary_plaintext() {
+        // Full 0x00–0xFF byte range.
+        let plaintext: Vec<u8> = (0u8..=255).collect();
+        let (ct, keys, sig_pub) = encrypt_bytes(&plaintext).unwrap();
+        let recovered = decrypt_bytes(&ct, &keys, &sig_pub).unwrap();
+        assert_eq!(recovered, plaintext);
+    }
+
+    #[test]
+    fn threshold_1_of_n_is_rejected() {
+        // threshold must be >= 2 — enforce at the library boundary.
+        assert!(encrypt_with_threshold(b"x", 3, 1).is_err());
+    }
+
+    #[test]
+    fn encrypt_produces_different_ciphertexts_each_call() {
+        let plaintext = b"determinism check";
+        let (ct1, _, _) = encrypt_bytes(plaintext).unwrap();
+        let (ct2, _, _) = encrypt_bytes(plaintext).unwrap();
+        assert_ne!(ct1, ct2, "two encryptions of the same plaintext must differ (random nonce)");
+    }
 }

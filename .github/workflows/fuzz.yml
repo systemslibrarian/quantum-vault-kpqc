@@ -1,0 +1,95 @@
+name: Fuzz build check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/qv-core/fuzz/**'
+      - 'crates/qv-core/src/**'
+      - '.github/workflows/fuzz.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fuzz-build:
+    name: Build all fuzz targets (nightly)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-fuzz-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-fuzz-
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Build fuzz targets (compile-check only — no execution)
+        working-directory: crates/qv-core
+        run: |
+          cargo fuzz build fuzz_container_parse
+          cargo fuzz build fuzz_shamir_reconstruct
+          cargo fuzz build fuzz_shamir_roundtrip
+          cargo fuzz build fuzz_decrypt_pipeline
+          cargo fuzz build fuzz_xor_protect
+
+  # Short smoke-run (30 s each) to catch obvious panics quickly.
+  # Runs only on push to main so PRs don't need nightly fuzzing time.
+  fuzz-smoke:
+    name: Fuzz smoke runs (30 s each)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: fuzz-build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-fuzz-smoke-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-fuzz-
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Smoke fuzz — container_parse (30 s)
+        working-directory: crates/qv-core
+        run: cargo fuzz run fuzz_container_parse -- -max_total_time=30
+
+      - name: Smoke fuzz — shamir_reconstruct (30 s)
+        working-directory: crates/qv-core
+        run: cargo fuzz run fuzz_shamir_reconstruct -- -max_total_time=30
+
+      - name: Smoke fuzz — shamir_roundtrip (30 s)
+        working-directory: crates/qv-core
+        run: cargo fuzz run fuzz_shamir_roundtrip -- -max_total_time=30
+
+      - name: Smoke fuzz — decrypt_pipeline (30 s)
+        working-directory: crates/qv-core
+        run: cargo fuzz run fuzz_decrypt_pipeline -- -max_total_time=30
+
+      - name: Smoke fuzz — xor_protect (30 s)
+        working-directory: crates/qv-core
+        run: cargo fuzz run fuzz_xor_protect -- -max_total_time=30

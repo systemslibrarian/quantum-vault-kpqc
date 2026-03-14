@@ -1,0 +1,47 @@
+[package]
+name = "qv-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+qv_core = { path = "..", features = ["dev-backend"] }
+
+# Prevent LTO stripping of fuzz entry points.
+[profile.release]
+debug = true
+
+[[bin]]
+name = "fuzz_container_parse"
+path = "fuzz_targets/fuzz_container_parse.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_shamir_reconstruct"
+path = "fuzz_targets/fuzz_shamir_reconstruct.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_shamir_roundtrip"
+path = "fuzz_targets/fuzz_shamir_roundtrip.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_decrypt_pipeline"
+path = "fuzz_targets/fuzz_decrypt_pipeline.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_xor_protect"
+path = "fuzz_targets/fuzz_xor_protect.rs"
+test = false
+doc = false
