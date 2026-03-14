@@ -112,15 +112,17 @@ impl Signature for DevSignature {
     }
 
     fn sign(&self, privkey: &[u8], message: &[u8]) -> Result<Vec<u8>> {
+        // Derive mac_key = SHA-256(privkey) == pubkey so that verify can reproduce
+        // this MAC with only the public key.
+        let mac_key = Sha256::digest(privkey);
         let mut h = Sha256::new();
-        h.update(privkey);
+        h.update(&mac_key);
         h.update(message);
         Ok(h.finalize().to_vec())
     }
 
     fn verify(&self, pubkey: &[u8], message: &[u8], signature: &[u8]) -> Result<bool> {
-        // In the dev scheme pubkey is SHA-256(privkey), but we use pubkey directly
-        // as the MAC key so the holder of pubkey can also verify.
+        // pubkey == SHA-256(privkey), so the MAC key is the same as used in sign().
         let mut h = Sha256::new();
         h.update(pubkey);
         h.update(message);

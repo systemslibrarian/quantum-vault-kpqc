@@ -134,3 +134,80 @@ pub(crate) fn xor_protect(data: &[u8], key: &[u8]) -> Result<Vec<u8>> {
 
     Ok(result)
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        crypto::backend::dev::{DevKem, DevSignature},
+        crypto::kem::Kem,
+        crypto::signature::Signature,
+        decrypt::decrypt_file,
+        DecryptOptions, EncryptOptions,
+    };
+
+    #[test]
+    fn aes_encrypt_decrypt_roundtrip() {
+        let kem = DevKem;
+        let sig = DevSignature;
+
+        let (pk1, sk1) = kem.generate_keypair().unwrap();
+        let (pk2, sk2) = kem.generate_keypair().unwrap();
+        let (sig_pub, sig_priv) = sig.generate_keypair().unwrap();
+
+        let plaintext = b"the quick brown fox jumps over the lazy dog";
+
+        let opts = EncryptOptions {
+            threshold: 2,
+            share_count: 2,
+            recipient_public_keys: vec![pk1, pk2],
+            signer_private_key: sig_priv,
+        };
+
+        let container = encrypt_file(plaintext, &opts, &kem, &sig).unwrap();
+
+        let dec_opts = DecryptOptions {
+            recipient_private_keys: vec![sk1, sk2],
+            signer_public_key: sig_pub,
+        };
+
+        let recovered = decrypt_file(&container, &dec_opts, &kem, &sig).unwrap();
+        assert_eq!(recovered.as_slice(), plaintext.as_slice());
+    }
+
+    #[test]
+    fn tampered_ciphertext_fails_authentication() {
+        let kem = DevKem;
+        let sig = DevSignature;
+
+        let (pk1, _sk1) = kem.generate_keypair().unwrap();
+        let (pk2, _sk2) = kem.generate_keypair().unwrap();
+        let (_sig_pub, sig_priv) = sig.generate_keypair().unwrap();
+
+        let opts = EncryptOptions {
+            threshold: 2,
+            share_count: 2,
+            recipient_public_keys: vec![pk1, pk2],
+            signer_private_key: sig_priv,
+        };
+
+        let mut container = encrypt_file(b"sensitive data", &opts, &kem, &sig).unwrap();
+
+        // Flip a bit in the ciphertext.
+        if let Some(b) = container.ciphertext.first_mut() {
+            *b ^= 0xff;
+        }
+
+        // Signature covers the ciphertext, so this must fail at verification.
+        let dec_opts = DecryptOptions {
+            recipient_private_keys: vec![_sk1, _sk2],
+            signer_public_key: _sig_pub,
+        };
+        let result = crate::decrypt::decrypt_file(&container, &dec_opts, &kem, &sig);
+        assert!(result.is_err());
+    }
+}
