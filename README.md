@@ -134,7 +134,9 @@ quantum-vault-kpqc/
 │   ├─ container-format.md        ← .qvault binary format
 │   ├─ threat-model.md            ← threat actors and security properties
 │   ├─ test-vectors.md            ← known-answer tests for Shamir + KEM
-│   └─ security-audit-checklist.md ← reviewer checklist
+│   ├─ security-audit-checklist.md ← reviewer checklist
+│   ├─ demo-walkthrough.md        ← UI steps mapped to cryptographic operations
+│   └─ implementation-notes.md   ← Emscripten build, JS↔WASM interface, limits
 │
 ├─ .github/workflows/deploy-pages.yml
 └─ README.md
