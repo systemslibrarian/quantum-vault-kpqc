@@ -76,6 +76,8 @@ pub fn encrypt_file(
         magic: MAGIC.to_string(),
         version: CONTAINER_VERSION,
         cipher: CipherSuite::Aes256Gcm,
+        kem_algorithm: kem.algorithm_id().to_string(),
+        sig_algorithm: signer.algorithm_id().to_string(),
         threshold: options.threshold,
         share_count: options.share_count,
         nonce: nonce_bytes.to_vec(),
@@ -97,14 +99,16 @@ pub fn encrypt_file(
 /// JSON object so the byte string is deterministic across platforms.
 pub(crate) fn container_signing_bytes(c: &QuantumVaultContainer) -> Result<Vec<u8>> {
     let repr = serde_json::to_vec(&serde_json::json!({
-        "magic":       &c.magic,
-        "version":     c.version,
-        "cipher":      &c.cipher,
-        "threshold":   c.threshold,
-        "share_count": c.share_count,
-        "nonce":       &c.nonce,
-        "ciphertext":  &c.ciphertext,
-        "shares":      &c.shares,
+        "magic":         &c.magic,
+        "version":       c.version,
+        "cipher":        &c.cipher,
+        "kem_algorithm": &c.kem_algorithm,
+        "sig_algorithm": &c.sig_algorithm,
+        "threshold":     c.threshold,
+        "share_count":   c.share_count,
+        "nonce":         &c.nonce,
+        "ciphertext":    &c.ciphertext,
+        "shares":        &c.shares,
     }))?;
     Ok(repr)
 }

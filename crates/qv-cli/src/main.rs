@@ -1,9 +1,9 @@
 //! Quantum Vault CLI — `qv`
 //!
 //! Commands:
-//!   qv keygen   [--out-dir <dir>]
-//!   qv encrypt  --in <file> --out <file> --pubkeys <k1,k2,...> --threshold <n> --sign-key <file>
-//!   qv decrypt  --in <file> --out <file> --privkeys <k1,k2,...> --verify-key <file>
+//!   qv keygen   [--out-dir <dir>] [--backend dev|kpqc]
+//!   qv encrypt  --in <file> --out <file> --pubkeys <k1,k2,...> --threshold <n> --sign-key <file> [--backend dev|kpqc]
+//!   qv decrypt  --in <file> --out <file> --privkeys <k1,k2,...> --verify-key <file> [--backend dev|kpqc]
 
 use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
@@ -17,6 +17,8 @@ use qv_core::{
     },
     decrypt_file, encrypt_file, DecryptOptions, EncryptOptions,
 };
+#[cfg(any(feature = "kpqc-native", feature = "kpqc-wasm"))]
+use qv_core::crypto::backend::kpqc::{KpqcKem, KpqcSignature};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -40,7 +42,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Generate a KEM keypair and a signature keypair (dev backend).
+    /// Generate a KEM keypair and a signature keypair.
     Keygen {
         /// Directory to write key files into (default: current directory).
         #[arg(long, default_value = ".")]
@@ -48,6 +50,10 @@ enum Command {
         /// Prefix for generated key file names.
         #[arg(long, default_value = "qv-key")]
         name: String,
+        /// Cryptographic backend to use: `dev` (default, testing only) or
+        /// `kpqc` (SMAUG-T + HAETAE, requires kpqc-native or kpqc-wasm feature).
+        #[arg(long, default_value = "dev")]
+        backend: String,
     },
 
     /// Encrypt a file into a .qvault container.
@@ -67,6 +73,9 @@ enum Command {
         /// Path to base64-encoded signing private key file.
         #[arg(long)]
         sign_key: PathBuf,
+        /// Cryptographic backend: `dev` or `kpqc`.
+        #[arg(long, default_value = "dev")]
+        backend: String,
     },
 
     /// Decrypt a .qvault container.
@@ -83,7 +92,38 @@ enum Command {
         /// Path to base64-encoded signature public key file (for verification).
         #[arg(long)]
         verify_key: PathBuf,
+        /// Cryptographic backend: `dev` or `kpqc`.
+        #[arg(long, default_value = "dev")]
+        backend: String,
     },
+}
+
+// ---------------------------------------------------------------------------
+// Backend selection
+// ---------------------------------------------------------------------------
+
+/// Build boxed KEM + Signature implementations from a backend name string.
+///
+/// Returns an error if the requested backend is unknown or unavailable in the
+/// current feature configuration.
+fn build_backends(backend: &str) -> Result<(Box<dyn Kem>, Box<dyn Signature>)> {
+    match backend {
+        "dev" => Ok((Box::new(DevKem), Box::new(DevSignature))),
+        "kpqc" => {
+            #[cfg(not(any(feature = "kpqc-native", feature = "kpqc-wasm")))]
+            return Err(anyhow!(
+                "The `kpqc` backend is not available in this build.\n\
+                 Compile with `--features kpqc-native` (requires vendored C source) \
+                 or `--features kpqc-wasm`."
+            ));
+            #[cfg(any(feature = "kpqc-native", feature = "kpqc-wasm"))]
+            Ok((Box::new(KpqcKem), Box::new(KpqcSignature)))
+        }
+        other => Err(anyhow!(
+            "Unknown backend {:?}. Valid options: `dev`, `kpqc`.",
+            other
+        )),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -99,25 +139,33 @@ fn main() {
 
 fn run() -> Result<()> {
     let cli = Cli::parse();
-    // The dev backend is used for all operations until SMAUG-T / HAETAE are integrated.
-    let kem = DevKem;
-    let sig = DevSignature;
 
     match cli.command {
-        Command::Keygen { out_dir, name } => cmd_keygen(&kem, &sig, &out_dir, &name),
+        Command::Keygen { out_dir, name, backend } => {
+            let (kem, sig) = build_backends(&backend)?;
+            cmd_keygen(kem.as_ref(), sig.as_ref(), &out_dir, &name)
+        }
         Command::Encrypt {
             r#in,
             out,
             pubkeys,
             threshold,
             sign_key,
-        } => cmd_encrypt(&kem, &sig, &r#in, &out, &pubkeys, threshold, &sign_key),
+            backend,
+        } => {
+            let (kem, sig) = build_backends(&backend)?;
+            cmd_encrypt(kem.as_ref(), sig.as_ref(), &r#in, &out, &pubkeys, threshold, &sign_key)
+        }
         Command::Decrypt {
             r#in,
             out,
             privkeys,
             verify_key,
-        } => cmd_decrypt(&kem, &sig, &r#in, &out, &privkeys, &verify_key),
+            backend,
+        } => {
+            let (kem, sig) = build_backends(&backend)?;
+            cmd_decrypt(kem.as_ref(), sig.as_ref(), &r#in, &out, &privkeys, &verify_key)
+        }
     }
 }
 

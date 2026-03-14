@@ -18,15 +18,17 @@ tampering is detected before any decryption is attempted.
 
 ```json
 {
-  "magic":       "QVLT1",
-  "version":     1,
-  "cipher":      "Aes256Gcm",
-  "threshold":   2,
-  "share_count": 3,
-  "nonce":       [/* 12 bytes, JSON array of u8 */],
-  "ciphertext":  [/* N + 16 bytes (payload + GCM auth tag) */],
-  "shares":      [ /* array of EncryptedKeyShare */ ],
-  "signature":   [/* variable bytes */]
+  "magic":         "QVLT1",
+  "version":       1,
+  "cipher":        "Aes256Gcm",
+  "kem_algorithm": "SMAUG-T-3",
+  "sig_algorithm": "HAETAE-3",
+  "threshold":     2,
+  "share_count":   3,
+  "nonce":         [/* 12 bytes, JSON array of u8 */],
+  "ciphertext":    [/* N + 16 bytes (payload + GCM auth tag) */],
+  "shares":        [ /* array of EncryptedKeyShare */ ],
+  "signature":     [/* variable bytes */]
 }
 ```
 
@@ -37,6 +39,8 @@ tampering is detected before any decryption is attempted.
 | `magic` | string | Must equal `"QVLT1"` |
 | `version` | u8 | Format version; currently `1` |
 | `cipher` | enum | `"Aes256Gcm"` only in v1 |
+| `kem_algorithm` | string | Algorithm used for key encapsulation, e.g. `"DevKem"`, `"SMAUG-T-3"` |
+| `sig_algorithm` | string | Algorithm used for the container signature, e.g. `"DevSignature"`, `"HAETAE-3"` |
 | `threshold` | u8 | Minimum shares needed to decrypt |
 | `share_count` | u8 | Total shares created |
 | `nonce` | `[u8]` | 12-byte AES-GCM nonce |
@@ -73,7 +77,7 @@ The signature covers the canonical JSON serialization of the following fields
 in this exact key order:
 
 ```
-magic, version, cipher, threshold, share_count, nonce, ciphertext, shares
+magic, version, cipher, kem_algorithm, sig_algorithm, threshold, share_count, nonce, ciphertext, shares
 ```
 
 The `signature` field itself is excluded.  The signing implementation is in

@@ -11,11 +11,34 @@ description = "Quantum Vault core cryptography library — AES-256-GCM, Shamir S
 # rlib    → regular Rust dep (qv-cli, tests)
 crate-type = ["cdylib", "rlib"]
 
-# Enable the `wasm` feature when building with wasm-pack:
-#   wasm-pack build crates/qv-core --target bundler --features wasm \
-#     --out-dir web-demo/src/lib/wasm-pkg
+# ── Feature flags ─────────────────────────────────────────────────────────────
+#
+# Default: `dev-backend` only.  Compiles fast, no external libraries required.
+#
+# `dev-backend`    — SHA-256/XOR dev stub (always compiled, never omitted so
+#                    tests and the CLI always have a usable backend).
+#
+# `kpqc-native`    — Enables SmaugTKemBackend + HaetaeSignatureBackend using
+#                    the reference C libraries compiled via build.rs.
+#                    Requires:
+#                      • vendor/smaug-t/  — SMAUG-T reference C code
+#                      • vendor/haetae/   — HAETAE reference C code
+#                    Will NOT compile unless those directories exist.
+#                    See build.rs for environment variable overrides.
+#
+# `kpqc-wasm`      — Scaffold for a future WASM-compiled KpqC path.
+#                    Currently a stub that returns NotImplemented errors.
+#                    Intended for wasm-pack builds targeting the browser.
+#
+# `wasm`           — Enables wasm-bindgen JS exports (qv_encrypt, qv_decrypt
+#                    etc.) for the web demo.  Incompatible with kpqc-native.
+#
 [features]
-wasm = ["dep:wasm-bindgen"]
+default = ["dev-backend"]
+dev-backend = []
+kpqc-native = ["dep:cc"]   # activates FFI + build.rs linkage
+kpqc-wasm   = []           # browser KpqC scaffold (stub only for now)
+wasm        = ["dep:wasm-bindgen"]
 
 [dependencies]
 aes-gcm.workspace = true
@@ -27,9 +50,15 @@ serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 zeroize = { workspace = true }
-# wasm-bindgen is only compiled when the `wasm` feature is active.
+# Only compiled when kpqc-native is enabled (needed by build.rs at compile time).
+cc = { workspace = true, optional = true }
+# Only compiled when wasm feature is enabled.
 wasm-bindgen = { version = "0.2", optional = true }
 
 # When targeting WASM32, wire getrandom to browser crypto.getRandomValues.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
+
+[build-dependencies]
+# build.rs uses cc to compile native KpqC C code — only when kpqc-native is on.
+cc = { workspace = true, optional = true }

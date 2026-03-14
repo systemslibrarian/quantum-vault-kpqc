@@ -1,140 +1,210 @@
-//! KPQC backend scaffold — SMAUG-T (KEM) + HAETAE (signature).
+//! KPQC backend — SMAUG-T (KEM) + HAETAE (signature).
 //!
-//! # Status: NOT IMPLEMENTED
+//! This module is **feature-gated**:
 //!
-//! This module is a documented scaffold.  It defines the integration strategy
-//! and expected FFI surface for the Korean Post-Quantum Cryptography competition
-//! finalists.  No real cryptography is wired up yet.
+//! | Feature flag     | What is compiled                                         |
+//! |------------------|----------------------------------------------------------|
+//! | `kpqc-native`    | Real FFI calls to compiled C libraries (requires `build.rs` + vendored source) |
+//! | `kpqc-wasm`      | Browser-side WASM stub (placeholder — pure-Rust port TBD) |
+//! | *(neither)*      | No-op stubs that return `NotAvailable` errors with hints |
 //!
 //! ## Algorithms
 //!
 //! | Role      | Algorithm  | Security level | Reference |
 //! |-----------|-----------|----------------|-----------|
-//! | KEM       | SMAUG-T   | Level 1/3/5    | <https://kpqc.or.kr/competition.html> |
-//! | Signature | HAETAE    | Level 2/3/5    | <https://kpqc.or.kr/competition.html> |
+//! | KEM       | SMAUG-T   | Level 3        | <https://kpqc.or.kr/competition.html> |
+//! | Signature | HAETAE    | Level 3        | <https://kpqc.or.kr/competition.html> |
 //!
-//! ## Integration strategy
+//! ## Vendoring the C reference implementations
 //!
-//! ### Native (CLI / server)
-//! 1. Vendor the reference C implementations under `vendor/smaug-t/` and
-//!    `vendor/haetae/`.
-//! 2. Write a `build.rs` in this crate that compiles them via `cc` crate.
-//! 3. Declare `extern "C"` bindings in this file mirroring the C API below.
-//! 4. Wrap them in safe Rust structs that implement [`Kem`] and [`Signature`].
-//!
-//! ### WASM (web-demo)
-//! 1. The reference implementations must be compiled with `emcc` or `wasm-pack`.
-//! 2. Alternatively, maintain a pure-Rust port of the algorithms.
-//! 3. Feature-gate native vs. WASM builds:
-//!    ```toml
-//!    [features]
-//!    kpqc-native = []   # links C libraries
-//!    kpqc-wasm   = []   # uses pure-Rust / emcc output
-//!    ```
-//!
-//! ## Expected C API — SMAUG-T
-//!
-//! ```c
-//! // Key generation
-//! int smaug_keypair(uint8_t *pk, uint8_t *sk);
-//!
-//! // Encapsulation: produces ciphertext ct and shared secret ss
-//! int smaug_enc(uint8_t *ct, uint8_t *ss, const uint8_t *pk);
-//!
-//! // Decapsulation: recovers shared secret ss from ct + sk
-//! int smaug_dec(uint8_t *ss, const uint8_t *ct, const uint8_t *sk);
-//! ```
-//!
-//! ## Expected C API — HAETAE
-//!
-//! ```c
-//! // Key generation
-//! int haetae_keypair(uint8_t *pk, uint8_t *sk);
-//!
-//! // Signing
-//! int haetae_sign(uint8_t *sig, size_t *siglen, const uint8_t *msg, size_t mlen,
-//!                 const uint8_t *sk);
-//!
-//! // Verification (returns 0 on success)
-//! int haetae_verify(const uint8_t *sig, size_t siglen, const uint8_t *msg,
-//!                   size_t mlen, const uint8_t *pk);
+//! ```sh
+//! git clone https://github.com/kpqclib/SMAUG-T vendor/smaug-t
+//! git clone https://github.com/kpqclib/HAETAE   vendor/haetae
+//! cargo build -p qv-core --features kpqc-native
 //! ```
 
 use crate::crypto::{kem::Kem, signature::Signature};
 use anyhow::{anyhow, Result};
 
-// ---------------------------------------------------------------------------
-// KpqcKem
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// ── NATIVE path (kpqc-native) ──────────────────────────────────────────────
+// ===========================================================================
 
-/// Post-quantum KEM using SMAUG-T.
-///
-/// # Status
-/// **Not yet implemented.**  Calling any method returns an informative error.
-/// Replace the bodies with FFI calls once the native library is vendored.
-pub struct KpqcKem;
+#[cfg(feature = "kpqc-native")]
+mod native {
+    use super::*;
+    use crate::crypto::backend::kpqc_ffi as ffi;
 
-impl Kem for KpqcKem {
-    fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-        Err(anyhow!(
-            "SMAUG-T is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
+    // ── KpqcKem (native) ────────────────────────────────────────────────────
+
+    /// Post-quantum KEM using SMAUG-T Level-3 via FFI.
+    pub struct KpqcKem;
+
+    impl Kem for KpqcKem {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            ffi::smaug_t_keypair()
+        }
+
+        fn encapsulate(&self, pubkey: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+            ffi::smaug_t_enc(pubkey)
+        }
+
+        fn decapsulate(&self, privkey: &[u8], kem_ciphertext: &[u8]) -> Result<Vec<u8>> {
+            ffi::smaug_t_dec(privkey, kem_ciphertext)
+        }
+
+        fn algorithm_id(&self) -> &'static str {
+            "SMAUG-T-3"
+        }
     }
 
-    fn encapsulate(&self, _pubkey: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
-        Err(anyhow!(
-            "SMAUG-T is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
+    // ── KpqcSignature (native) ───────────────────────────────────────────────
+
+    /// Post-quantum signature using HAETAE Level-3 via FFI.
+    pub struct KpqcSignature;
+
+    impl Signature for KpqcSignature {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            ffi::haetae_keypair()
+        }
+
+        fn sign(&self, privkey: &[u8], message: &[u8]) -> Result<Vec<u8>> {
+            ffi::haetae_sign(privkey, message)
+        }
+
+        fn verify(&self, pubkey: &[u8], message: &[u8], signature: &[u8]) -> Result<bool> {
+            ffi::haetae_verify(pubkey, message, signature)
+        }
+
+        fn algorithm_id(&self) -> &'static str {
+            "HAETAE-3"
+        }
+    }
+}
+
+// ===========================================================================
+// ── WASM path (kpqc-wasm, !kpqc-native) ────────────────────────────────────
+// ===========================================================================
+
+#[cfg(all(feature = "kpqc-wasm", not(feature = "kpqc-native")))]
+mod wasm_backend {
+    use super::*;
+
+    // TODO: replace this stub with a proper pure-Rust port or emcc-compiled
+    // WASM bindings once available.
+
+    /// Post-quantum KEM using SMAUG-T (WASM stub — not yet implemented).
+    pub struct KpqcKem;
+
+    impl Kem for KpqcKem {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(anyhow!(
+                "SMAUG-T WASM backend is not yet implemented. \
+                 A pure-Rust port or emcc-compiled binding is required."
+            ))
+        }
+        fn encapsulate(&self, _pubkey: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(anyhow!("SMAUG-T WASM backend is not yet implemented."))
+        }
+        fn decapsulate(&self, _privkey: &[u8], _ct: &[u8]) -> Result<Vec<u8>> {
+            Err(anyhow!("SMAUG-T WASM backend is not yet implemented."))
+        }
+        fn algorithm_id(&self) -> &'static str {
+            "SMAUG-T-3 (wasm-stub)"
+        }
     }
 
-    fn decapsulate(&self, _privkey: &[u8], _kem_ciphertext: &[u8]) -> Result<Vec<u8>> {
-        Err(anyhow!(
-            "SMAUG-T is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
-    }
+    /// Post-quantum signature using HAETAE (WASM stub — not yet implemented).
+    pub struct KpqcSignature;
 
-    fn algorithm_id(&self) -> &'static str {
-        "SMAUG-T (scaffold)"
+    impl Signature for KpqcSignature {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(anyhow!(
+                "HAETAE WASM backend is not yet implemented. \
+                 A pure-Rust port or emcc-compiled binding is required."
+            ))
+        }
+        fn sign(&self, _privkey: &[u8], _message: &[u8]) -> Result<Vec<u8>> {
+            Err(anyhow!("HAETAE WASM backend is not yet implemented."))
+        }
+        fn verify(&self, _pubkey: &[u8], _message: &[u8], _sig: &[u8]) -> Result<bool> {
+            Err(anyhow!("HAETAE WASM backend is not yet implemented."))
+        }
+        fn algorithm_id(&self) -> &'static str {
+            "HAETAE-3 (wasm-stub)"
+        }
     }
 }
 
-// ---------------------------------------------------------------------------
-// KpqcSignature
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// ── Stub path (neither kpqc-native nor kpqc-wasm) ──────────────────────────
+// ===========================================================================
 
-/// Post-quantum signature using HAETAE.
-///
-/// # Status
-/// **Not yet implemented.**  Calling any method returns an informative error.
-/// Replace the bodies with FFI calls once the native library is vendored.
-pub struct KpqcSignature;
+#[cfg(not(any(feature = "kpqc-native", feature = "kpqc-wasm")))]
+mod stub {
+    use super::*;
 
-impl Signature for KpqcSignature {
-    fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-        Err(anyhow!(
-            "HAETAE is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
+    /// Post-quantum KEM using SMAUG-T.
+    ///
+    /// This stub is compiled when neither `kpqc-native` nor `kpqc-wasm`
+    /// features are active.  Activate one of those features to enable real
+    /// cryptography.
+    pub struct KpqcKem;
+
+    impl Kem for KpqcKem {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(not_available("SMAUG-T (KEM)"))
+        }
+        fn encapsulate(&self, _pubkey: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(not_available("SMAUG-T (KEM)"))
+        }
+        fn decapsulate(&self, _privkey: &[u8], _ct: &[u8]) -> Result<Vec<u8>> {
+            Err(not_available("SMAUG-T (KEM)"))
+        }
+        fn algorithm_id(&self) -> &'static str {
+            "SMAUG-T-3 (unavailable — enable kpqc-native or kpqc-wasm feature)"
+        }
     }
 
-    fn sign(&self, _privkey: &[u8], _message: &[u8]) -> Result<Vec<u8>> {
-        Err(anyhow!(
-            "HAETAE is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
+    /// Post-quantum signature using HAETAE.
+    ///
+    /// This stub is compiled when neither `kpqc-native` nor `kpqc-wasm`
+    /// features are active.
+    pub struct KpqcSignature;
+
+    impl Signature for KpqcSignature {
+        fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
+            Err(not_available("HAETAE (signature)"))
+        }
+        fn sign(&self, _privkey: &[u8], _message: &[u8]) -> Result<Vec<u8>> {
+            Err(not_available("HAETAE (signature)"))
+        }
+        fn verify(&self, _pubkey: &[u8], _message: &[u8], _sig: &[u8]) -> Result<bool> {
+            Err(not_available("HAETAE (signature)"))
+        }
+        fn algorithm_id(&self) -> &'static str {
+            "HAETAE-3 (unavailable — enable kpqc-native or kpqc-wasm feature)"
+        }
     }
 
-    fn verify(&self, _pubkey: &[u8], _message: &[u8], _signature: &[u8]) -> Result<bool> {
-        Err(anyhow!(
-            "HAETAE is not yet integrated. \
-             See crates/qv-core/src/crypto/backend/kpqc.rs for the integration roadmap."
-        ))
-    }
-
-    fn algorithm_id(&self) -> &'static str {
-        "HAETAE (scaffold)"
+    fn not_available(algo: &str) -> anyhow::Error {
+        anyhow!(
+            "{algo} is not available in this build. \
+             Compile with `--features kpqc-native` (requires vendored C source) \
+             or `--features kpqc-wasm` for the browser backend."
+        )
     }
 }
+
+// ===========================================================================
+// ── Public re-exports — pick the right impl ─────────────────────────────────
+// ===========================================================================
+
+#[cfg(feature = "kpqc-native")]
+pub use native::{KpqcKem, KpqcSignature};
+
+#[cfg(all(feature = "kpqc-wasm", not(feature = "kpqc-native")))]
+pub use wasm_backend::{KpqcKem, KpqcSignature};
+
+#[cfg(not(any(feature = "kpqc-native", feature = "kpqc-wasm")))]
+pub use stub::{KpqcKem, KpqcSignature};

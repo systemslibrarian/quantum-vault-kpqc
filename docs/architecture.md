@@ -26,18 +26,22 @@ src/
 ├─ lib.rs          public API surface: encrypt_file, decrypt_file, split_key, reconstruct_key
 │                  encrypt_bytes, decrypt_bytes, encrypt_with_threshold, decrypt_with_threshold
 ├─ container.rs    .qvault container type + JSON serialization
+│                  (includes kem_algorithm + sig_algorithm metadata fields)
 ├─ encrypt.rs      AES-256-GCM + Shamir + KEM protect + sign pipeline
 ├─ decrypt.rs      verify + KEM recover + Shamir reconstruct + AES decrypt pipeline
 ├─ shamir.rs       Shamir Secret Sharing over GF(2^8)
 ├─ wasm.rs         WebAssembly bindings (compiled with --features wasm only)
+build.rs            compiles SMAUG-T + HAETAE C libs when kpqc-native is active
 └─ crypto/
     ├─ mod.rs          re-exports backends
     ├─ kem.rs          Kem trait
     ├─ signature.rs    Signature trait
     └─ backend/
-        ├─ mod.rs      re-exports dev + kpqc
+        ├─ mod.rs      re-exports dev + kpqc; exposes kpqc_ffi under kpqc-native
         ├─ dev.rs      development stub (SHA-256 + XOR) — no real security
-        └─ kpqc.rs     SMAUG-T + HAETAE scaffold (not yet integrated)
+        ├─ kpqc.rs     SMAUG-T + HAETAE — feature-gated native/wasm/stub
+        └─ kpqc_ffi.rs extern "C" wrappers for smaug3_* and haetae3_* symbols
+                        (compiled only with kpqc-native feature)
 ```
 
 ### Encryption pipeline
@@ -145,16 +149,26 @@ Used for all current testing.  Not cryptographically secure.
 | Sign | SHA-256(privkey \|\| message) |
 | Verify | SHA-256(pubkey \|\| message) == signature |
 
-### KPQC backend scaffold (`kpqc.rs`)
+### KPQC backend (`kpqc.rs` + `kpqc_ffi.rs`)
 
-Placeholder for SMAUG-T (KEM) and HAETAE (signature).  All methods return a
-descriptive error with an integration roadmap pointer.
+Feature-gated three-tier implementation for SMAUG-T (KEM) and HAETAE (signature):
 
-**Integration plan:**
-1. Vendor KpqC C reference implementations under `vendor/smaug-t/` and `vendor/haetae/`.
-2. Write `build.rs` to compile them with the `cc` crate.
-3. Declare `extern "C"` bindings in `kpqc.rs`.
-4. Feature-gate: `kpqc-native` for CLI, `kpqc-wasm` for browser (Emscripten build).
+| Feature flag | Compiled path | Description |
+|--------------|--------------|-------------|
+| `kpqc-native` | `kpqc_ffi.rs` → `build.rs` | Real FFI to vendored C reference implementations |
+| `kpqc-wasm` | `kpqc.rs` wasm branch | Browser placeholder (pure-Rust port TBD) |
+| *(neither)*  | `kpqc.rs` stub branch | Returns `NotAvailable` with a helpful feature hint |
+
+**Vendoring the C reference implementations:**
+```sh
+git clone https://github.com/kpqclib/SMAUG-T vendor/smaug-t
+git clone https://github.com/kpqclib/HAETAE   vendor/haetae
+cargo build -p qv-core --features kpqc-native
+```
+
+The `build.rs` locates source via env vars `SMAUG_T_SRC` / `HAETAE_SRC` or the
+`vendor/` subdirectories, compiles the C files with the `cc` crate, and emits
+`cargo:rustc-link-lib=static=smaug_t` / `haetae`.
 
 ---
 
@@ -164,9 +178,13 @@ A `clap`-based binary exposing three subcommands:
 
 | Command | Purpose |
 |---------|---------|
-| `qv keygen` | Generate KEM + signature keypairs (dev backend) |
-| `qv encrypt` | Encrypt a file → `.qvault` container |
-| `qv decrypt` | Decrypt a `.qvault` container → plaintext file |
+| `qv keygen [--backend dev\|kpqc]` | Generate KEM + signature keypairs |
+| `qv encrypt ... [--backend dev\|kpqc]` | Encrypt a file → `.qvault` container |
+| `qv decrypt ... [--backend dev\|kpqc]` | Decrypt a `.qvault` container → plaintext file |
+
+The `--backend` flag defaults to `dev` (the always-available stub).  Passing
+`--backend kpqc` selects SMAUG-T + HAETAE and fails at startup if the
+`kpqc-native` or `kpqc-wasm` feature was not compiled in.
 
 Keys are stored as base64-encoded text files.  The CLI accepts comma-separated lists of base64 public/private keys for multi-recipient threshold setups.
 

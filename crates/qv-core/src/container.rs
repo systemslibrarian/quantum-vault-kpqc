@@ -43,6 +43,16 @@ pub struct QuantumVaultContainer {
     pub version: u8,
     /// Symmetric cipher used to encrypt `ciphertext`.
     pub cipher: CipherSuite,
+    /// KEM algorithm identifier (e.g. `"DevKem"`, `"SMAUG-T-3"`).
+    ///
+    /// Stored in the container so that future readers can validate they are
+    /// using the correct algorithm to decapsulate the key shares.
+    pub kem_algorithm: String,
+    /// Signature algorithm identifier (e.g. `"DevSignature"`, `"HAETAE-3"`).
+    ///
+    /// Stored so that future readers can validate the signature with the
+    /// correct algorithm.
+    pub sig_algorithm: String,
     /// Minimum number of shares required to reconstruct the file key.
     pub threshold: u8,
     /// Total number of shares that were created.

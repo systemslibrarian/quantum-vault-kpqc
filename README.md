@@ -188,13 +188,15 @@ quantum-vault/
 │
 ├─ crates/
 │   ├─ qv-core/            ← core crypto library (compiles to WASM)
-│   │   ├─ Cargo.toml
+│   │   ├─ Cargo.toml      ← features: dev-backend (default), kpqc-native, kpqc-wasm, wasm
+│   │   ├─ build.rs        ← compiles SMAUG-T + HAETAE C libs (kpqc-native only)
 │   │   └─ src/
 │   │       ├─ lib.rs
 │   │       ├─ encrypt.rs
 │   │       ├─ decrypt.rs
 │   │       ├─ container.rs
 │   │       ├─ shamir.rs
+│   │       ├─ wasm.rs     ← wasm-bindgen exports (--features wasm)
 │   │       └─ crypto/
 │   │           ├─ mod.rs
 │   │           ├─ kem.rs
@@ -202,12 +204,17 @@ quantum-vault/
 │   │           └─ backend/
 │   │               ├─ mod.rs
 │   │               ├─ dev.rs
-│   │               └─ kpqc.rs
+│   │               ├─ kpqc.rs      ← feature-gated: native / wasm / stub
+│   │               └─ kpqc_ffi.rs ← extern "C" wrappers (kpqc-native only)
 │   │
 │   └─ qv-cli/             ← CLI binary
 │       ├─ Cargo.toml
 │       └─ src/
-│           └─ main.rs
+│           └─ main.rs     ← --backend dev|kpqc flag
+│
+├─ vendor/                  ← (gitignored) C reference implementations
+│   ├─ smaug-t/             ←   git clone https://github.com/kpqclib/SMAUG-T
+│   └─ haetae/              ←   git clone https://github.com/kpqclib/HAETAE
 │
 ├─ web-demo/                ← Next.js interactive demo
 │   ├─ package.json
@@ -275,17 +282,22 @@ The Shamir implementation requires particular care around:
 
 ## Current Development Status
 
-Initial development includes:
+Completed:
 
 - AES-256-GCM file encryption
-- Shamir Secret Sharing
-- Container serialization and format specification
-- CLI interface
+- Shamir Secret Sharing over GF(2^8)
+- Container serialization with `kem_algorithm` + `sig_algorithm` metadata fields
+- Pluggable backend architecture (`dev-backend`, `kpqc-native`, `kpqc-wasm` feature flags)
+- CLI (`qv keygen / encrypt / decrypt`) with `--backend dev|kpqc` flag
+- WASM bridge for the browser demo (TypeScript fallback included)
+- `build.rs` for SMAUG-T + HAETAE C compilation (activated by `kpqc-native`)
+- `kpqc_ffi.rs` — safe Rust wrappers over the `smaug3_*` / `haetae3_*` C API
+- Feature-gated `kpqc.rs` — native FFI / WASM stub / no-op stub automatically selected
 
-Future integration will add:
+In progress / remaining:
 
-- SMAUG-T key encapsulation
-- HAETAE signatures
+- Vendor the KpqC reference C implementations (`vendor/smaug-t/`, `vendor/haetae/`)
+- SMAUG-T WASM path (Emscripten / pure-Rust port)
 - Hybrid mode (KpqC + NIST algorithm support)
 - Interactive web demo with card deck visualization
 - Formal test vectors

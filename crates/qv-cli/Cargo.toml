@@ -10,6 +10,14 @@ description = "Quantum Vault command-line interface — encrypt, decrypt, keygen
 name = "qv"
 path = "src/main.rs"
 
+# ── Feature flags ─────────────────────────────────────────────────────────────
+# Mirror qv-core feature flags so `cargo build -F kpqc-native` propagates.
+[features]
+default = ["dev-backend"]
+dev-backend  = ["qv-core/dev-backend"]
+kpqc-native  = ["qv-core/kpqc-native"]
+kpqc-wasm    = ["qv-core/kpqc-wasm"]
+
 [dependencies]
 qv-core = { path = "../qv-core" }
 anyhow.workspace = true
