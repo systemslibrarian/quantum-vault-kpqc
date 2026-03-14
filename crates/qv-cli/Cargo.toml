@@ -1,0 +1,18 @@
+[package]
+name = "qv-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Quantum Vault command-line interface — encrypt, decrypt, keygen."
+
+[[bin]]
+name = "qv"
+path = "src/main.rs"
+
+[dependencies]
+qv-core = { path = "../qv-core" }
+anyhow.workspace = true
+base64.workspace = true
+clap.workspace = true
+serde_json.workspace = true

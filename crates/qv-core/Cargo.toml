@@ -1,0 +1,17 @@
+[package]
+name = "qv-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Quantum Vault core cryptography library — AES-256-GCM, Shamir Secret Sharing, and pluggable PQ crypto."
+
+[dependencies]
+aes-gcm.workspace = true
+anyhow.workspace = true
+rand.workspace = true
+serde = { workspace = true }
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+zeroize = { workspace = true }
