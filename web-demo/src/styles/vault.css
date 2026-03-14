@@ -77,6 +77,9 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
 }
 
 .btn-dismiss:hover {
@@ -122,6 +125,8 @@ body {
   transition: border-color 200ms, box-shadow 200ms, transform 100ms;
   position: relative;
   outline: none;
+  min-height: 60px;
+  touch-action: manipulation;
 }
 
 .deposit-box:hover {
@@ -171,11 +176,11 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7a7870;
+  color: #5c5850;
 }
 
 .occupied .box-status {
-  color: #a06010;
+  color: #7a4808;
 }
 
 /* ---------- Keyhole (CSS shape) ---------- */
@@ -260,6 +265,9 @@ body {
   border-radius: 4px;
   line-height: 1;
   flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
 }
 
 .btn-cancel-x:hover {
@@ -287,13 +295,14 @@ body {
 .form-group textarea {
   border: 1px solid #c8c4bc;
   border-radius: 5px;
-  padding: 8px 10px;
-  font-size: 0.9rem;
+  padding: 10px 12px;
+  font-size: 1rem;
   font-family: inherit;
   background: #fff;
   color: #1a1715;
   transition: border-color 150ms;
   width: 100%;
+  touch-action: manipulation;
 }
 
 .form-group textarea {
@@ -329,7 +338,7 @@ body {
 
 .panel-note {
   font-size: 0.8rem;
-  color: #7a7460;
+  color: #4e4940;
   margin: 8px 0 0;
   font-style: italic;
 }
@@ -352,6 +361,8 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms;
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .btn-primary:hover {
@@ -373,6 +384,8 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms;
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .btn-outline:hover {
@@ -534,6 +547,8 @@ body {
   font-size: 0.78rem;
   cursor: pointer;
   transition: color 150ms, border-color 150ms;
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .btn-reset:hover {
@@ -571,8 +586,10 @@ body {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  color: #6a6460;
+  color: #3a3530;
   transition: background 120ms, color 120ms, border-color 120ms;
+  min-height: 36px;
+  touch-action: manipulation;
 }
 
 .lang-btn.active {
@@ -800,6 +817,183 @@ body {
 
 .cred-table tr:last-child td {
   border-bottom: none;
+}
+
+/* ==========================================================
+   Accessibility & Mobile Hardening
+   ========================================================== */
+
+/* Skip-navigation link — appears only on keyboard focus */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 6px;
+  z-index: 9999;
+  background: #003478;
+  color: #fff;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 6px 6px;
+  white-space: nowrap;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Scrollable table container */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+/* main used as page wrapper */
+main.page-wrapper {
+  display: block;
+}
+
+/* ---- Focus-visible rings for all interactive elements ---- */
+.btn-primary:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 5px #003478;
+}
+.btn-outline:focus-visible {
+  outline: 3px solid #003478;
+  outline-offset: 2px;
+}
+.btn-dismiss:focus-visible,
+.btn-cancel-x:focus-visible {
+  outline: 3px solid #003478;
+  outline-offset: 2px;
+}
+.btn-reset:focus-visible {
+  outline: 3px solid #C60C30;
+  outline-offset: 2px;
+}
+.lang-btn:focus-visible {
+  outline: 3px solid #003478;
+  outline-offset: 2px;
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .panel-area {
+    transition: none;
+  }
+  .deposit-box {
+    transition: none;
+  }
+}
+
+/* ---- Windows High Contrast Mode ---- */
+@media (forced-colors: active) {
+  .deposit-box {
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+  .deposit-box.occupied {
+    border-color: Highlight;
+    background: Canvas;
+    forced-color-adjust: none;
+  }
+  .deposit-box:focus-visible,
+  .deposit-box.selected {
+    outline: 3px solid Highlight;
+    border-color: Highlight;
+  }
+  .btn-primary {
+    background: ButtonText;
+    color: ButtonFace;
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+  .btn-outline {
+    border: 2px solid ButtonText;
+  }
+  .pipeline-step.active  { background: Highlight;  color: HighlightText; forced-color-adjust: none; }
+  .pipeline-step.done    { background: ButtonText;  color: ButtonFace;    forced-color-adjust: none; }
+  .pipeline-step.failed  { background: LinkText;    color: ButtonFace;    forced-color-adjust: none; }
+  .result-success { border: 2px solid ButtonText; }
+  .result-failure { border: 2px solid LinkText; }
+  .algo-dot { forced-color-adjust: none; }
+}
+
+/* ---- Mobile ≤ 480px ---- */
+@media (max-width: 480px) {
+  .page-wrapper {
+    padding: 0 12px 36px;
+  }
+  .vault-section {
+    padding: 12px;
+  }
+  .vault-wall {
+    gap: 8px;
+  }
+  .panel-inner {
+    padding: 16px 14px;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+    text-align: center;
+  }
+  .site-title {
+    font-size: 1.35rem;
+  }
+  .hint-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-dismiss {
+    align-self: flex-end;
+  }
+  .kpqc-panel {
+    padding: 16px 14px;
+  }
+}
+
+/* ---- Very small screens ≤ 360px ---- */
+@media (max-width: 360px) {
+  .site-title {
+    font-size: 1.15rem;
+  }
+  .vault-section {
+    padding: 8px;
+  }
+  .vault-wall {
+    gap: 5px;
+  }
+  .panel-inner {
+    padding: 12px 10px;
+  }
 }
 
 .cred-box {

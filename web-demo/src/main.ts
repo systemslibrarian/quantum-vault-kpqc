@@ -143,6 +143,7 @@ async function init(): Promise<void> {
 
       const msgEl = document.createElement('div');
       msgEl.className = 'result-box result-failure reveal-text';
+      msgEl.setAttribute('role', 'alert');
       resultEl.replaceChildren(msgEl);
 
       await showGibberish(msgEl, result.gibberish);
@@ -183,8 +184,13 @@ function setupLangToggle(onLangChange?: () => void): void {
     btn.addEventListener('click', () => {
       const lang = (btn.dataset.lang ?? 'en') as 'en' | 'ko';
       setLang(lang);
+      // Update html[lang] for screen readers and OS language detection
+      document.documentElement.lang = lang === 'ko' ? 'ko' : 'en';
       document.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.lang === lang);
+        const isActive = b.dataset.lang === lang;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-current', isActive ? 'true' : 'false');
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
       document.querySelectorAll<HTMLElement>('[data-en]').forEach(el => {
         const translated = el.getAttribute(`data-${lang}`);

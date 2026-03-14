@@ -21,28 +21,45 @@ export function showDepositPanel(
     <div class="panel-inner">
       <div class="panel-header">
         <h2 class="panel-title">Box ${boxNumber} — ${t('storeSecret')}</h2>
-        <button class="btn-cancel-x" aria-label="Close panel">✕</button>
+        <button class="btn-cancel-x" aria-label="${t('cancelBtn')}">✕</button>
       </div>
       <div class="form-group">
         <label for="deposit-message">${t('secretMessage')}</label>
-        <textarea id="deposit-message" placeholder="${t('secretPlaceholder')}" rows="3"></textarea>
-        <div class="field-error" id="err-message"></div>
+        <textarea id="deposit-message"
+                  placeholder="${t('secretPlaceholder')}"
+                  rows="3"
+                  aria-required="true"
+                  aria-describedby="err-message"
+                  autocomplete="off"></textarea>
+        <div class="field-error" id="err-message" role="alert" aria-live="assertive"></div>
       </div>
       <div class="password-row">
         <div class="form-group">
           <label for="pw-alice">${t('aliceKey')}</label>
-          <input type="text" id="pw-alice" autocomplete="off" placeholder="${t('alicePh')}" />
-          <div class="field-error" id="err-alice"></div>
+          <input type="text" id="pw-alice"
+                 autocomplete="new-password"
+                 placeholder="${t('alicePh')}"
+                 aria-required="true"
+                 aria-describedby="err-alice" />
+          <div class="field-error" id="err-alice" role="alert" aria-live="assertive"></div>
         </div>
         <div class="form-group">
           <label for="pw-bob">${t('bobKey')}</label>
-          <input type="text" id="pw-bob" autocomplete="off" placeholder="${t('bobPh')}" />
-          <div class="field-error" id="err-bob"></div>
+          <input type="text" id="pw-bob"
+                 autocomplete="new-password"
+                 placeholder="${t('bobPh')}"
+                 aria-required="true"
+                 aria-describedby="err-bob" />
+          <div class="field-error" id="err-bob" role="alert" aria-live="assertive"></div>
         </div>
         <div class="form-group">
           <label for="pw-carol">${t('carolKey')}</label>
-          <input type="text" id="pw-carol" autocomplete="off" placeholder="${t('carolPh')}" />
-          <div class="field-error" id="err-carol"></div>
+          <input type="text" id="pw-carol"
+                 autocomplete="new-password"
+                 placeholder="${t('carolPh')}"
+                 aria-required="true"
+                 aria-describedby="err-carol" />
+          <div class="field-error" id="err-carol" role="alert" aria-live="assertive"></div>
         </div>
       </div>
       <p class="panel-note">${t('thresholdNote')}</p>
@@ -51,11 +68,16 @@ export function showDepositPanel(
         <button class="btn-primary" id="btn-seal">${t('sealBtn')}</button>
         <button class="btn-outline" id="btn-cancel-deposit">${t('cancelBtn')}</button>
       </div>
-      <div id="deposit-result"></div>
+      <div id="deposit-result" aria-live="polite" aria-atomic="true"></div>
     </div>
   `;
 
   openPanel(panel);
+  // Move focus into the panel so keyboard/screen-reader users land on the first field
+  setTimeout(() => {
+    const first = panel.querySelector<HTMLElement>('textarea, input');
+    first?.focus();
+  }, 50);
 
   panel.querySelector('.btn-cancel-x')!.addEventListener('click', onCancel);
   panel.querySelector('#btn-cancel-deposit')!.addEventListener('click', onCancel);
@@ -104,6 +126,15 @@ export function showDepositPanel(
       valid = false;
     }
 
+    // Set aria-invalid on fields with errors
+    (['message', 'alice', 'bob', 'carol'] as const).forEach(field => {
+      const errId = `err-${field}`;
+      const inputId = field === 'message' ? 'deposit-message' : `pw-${field}`;
+      const hasError = !!(panel.querySelector(`#${errId}`) as HTMLElement).textContent;
+      const inputEl = panel.querySelector<HTMLElement>(`#${inputId}`);
+      if (inputEl) inputEl.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+    });
+
     if (!valid) return;
 
     const btn = panel.querySelector<HTMLButtonElement>('#btn-seal')!;
@@ -125,21 +156,27 @@ export function showRetrievePanel(
     <div class="panel-inner">
       <div class="panel-header">
         <h2 class="panel-title" id="retrieve-title">Box ${boxNumber} — ${t('enterPasswords')}</h2>
-        <button class="btn-cancel-x" aria-label="Close panel">✕</button>
+        <button class="btn-cancel-x" aria-label="${t('cancelBtn')}">✕</button>
       </div>
       <p class="panel-note">${t('thresholdOpen')}</p>
       <div class="password-row">
         <div class="form-group">
           <label for="rpw-alice">${t('aliceKey')}</label>
-          <input type="password" id="rpw-alice" autocomplete="off" placeholder="${t('alicePh')}" />
+          <input type="password" id="rpw-alice"
+                 autocomplete="current-password"
+                 placeholder="${t('alicePh')}" />
         </div>
         <div class="form-group">
           <label for="rpw-bob">${t('bobKey')}</label>
-          <input type="password" id="rpw-bob" autocomplete="off" placeholder="${t('bobPh')}" />
+          <input type="password" id="rpw-bob"
+                 autocomplete="current-password"
+                 placeholder="${t('bobPh')}" />
         </div>
         <div class="form-group">
           <label for="rpw-carol">${t('carolKey')}</label>
-          <input type="password" id="rpw-carol" autocomplete="off" placeholder="${t('carolPh')}" />
+          <input type="password" id="rpw-carol"
+                 autocomplete="current-password"
+                 placeholder="${t('carolPh')}" />
         </div>
       </div>
       <div id="pipeline-area"></div>
@@ -147,11 +184,16 @@ export function showRetrievePanel(
         <button class="btn-primary" id="btn-open">${t('openBtn')}</button>
         <button class="btn-outline" id="btn-cancel-retrieve">${t('cancelBtn')}</button>
       </div>
-      <div id="retrieve-result"></div>
+      <div id="retrieve-result" aria-live="polite" aria-atomic="true"></div>
     </div>
   `;
 
   openPanel(panel);
+  // Move focus into the panel so keyboard/screen-reader users start at first password field
+  setTimeout(() => {
+    const first = panel.querySelector<HTMLElement>('input[type="password"]');
+    first?.focus();
+  }, 50);
 
   panel.querySelector('.btn-cancel-x')!.addEventListener('click', onCancel);
   panel.querySelector('#btn-cancel-retrieve')!.addEventListener('click', onCancel);
@@ -186,7 +228,7 @@ export function updateRetrieveTitle(panel: HTMLElement, title: string): void {
 export function showDepositSuccess(panel: HTMLElement, boxNumber: string): void {
   const resultEl = panel.querySelector<HTMLElement>('#deposit-result')!;
   resultEl.innerHTML = `
-    <div class="result-box result-success">
+    <div class="result-box result-success" role="status">
       ${t('sealedIn')} ${boxNumber}. ${t('sealedCheck')}
     </div>
   `;
