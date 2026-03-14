@@ -17,9 +17,18 @@
 //!
 //! ## Vendoring the C reference implementations
 //!
+//! The SMAUG-T and HAETAE reference implementations are available from the
+//! KpqC competition at <https://kpqc.or.kr/competition.html>.  There is no
+//! official public GitHub mirror.  Download the submission packages, extract
+//! them, and place the source trees at:
+//!
+//! ```text
+//! vendor/smaug-t/   ← extracted SMAUG-T reference implementation
+//! vendor/haetae/    ← extracted HAETAE reference implementation
+//! ```
+//!
+//! Then build with:
 //! ```sh
-//! git clone https://github.com/kpqclib/SMAUG-T vendor/smaug-t
-//! git clone https://github.com/kpqclib/HAETAE   vendor/haetae
 //! cargo build -p qv-core --features kpqc-native
 //! ```
 

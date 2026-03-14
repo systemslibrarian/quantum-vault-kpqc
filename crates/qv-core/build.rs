@@ -17,13 +17,16 @@
 //!
 //! ## How to obtain the reference implementations
 //!
-//! SMAUG-T:  <https://github.com/kpqclib/SMAUG-T>
-//! HAETAE:   <https://github.com/kpqclib/HAETAE>
+//! The SMAUG-T and HAETAE reference implementations are distributed through
+//! the KpqC competition: <https://kpqc.or.kr/competition.html>
 //!
-//! Clone them:
-//! ```sh
-//! git clone https://github.com/kpqclib/SMAUG-T  vendor/smaug-t
-//! git clone https://github.com/kpqclib/HAETAE    vendor/haetae
+//! There is no official public GitHub mirror.  Download the submission
+//! packages from the KpqC website, extract them, and place the source trees
+//! at:
+//!
+//! ```text
+//! vendor/smaug-t/   ← extracted SMAUG-T reference implementation
+//! vendor/haetae/    ← extracted HAETAE reference implementation
 //! ```
 //!
 //! Then build with:
@@ -81,7 +84,8 @@ fn compile_kpqc_native() {
         eprintln!("║  Expected:  {}  ║",
             smaug_src.display());
         eprintln!("║  Override:  export SMAUG_T_SRC=/path/to/SMAUG-T         ║");
-        eprintln!("║  Clone:     git clone https://github.com/kpqclib/SMAUG-T vendor/smaug-t ║");
+        eprintln!("║  Source:    https://kpqc.or.kr/competition.html                         ║");
+        eprintln!("║  Extract the SMAUG-T package and place it at vendor/smaug-t/               ║");
         eprintln!("╚══════════════════════════════════════════════════════════╝");
         eprintln!();
         std::process::exit(1);
@@ -107,7 +111,8 @@ fn compile_kpqc_native() {
         eprintln!("║  Expected:  {}   ║",
             haetae_src.display());
         eprintln!("║  Override:  export HAETAE_SRC=/path/to/HAETAE           ║");
-        eprintln!("║  Clone:     git clone https://github.com/kpqclib/HAETAE vendor/haetae ║");
+        eprintln!("║  Source:    https://kpqc.or.kr/competition.html                        ║");
+        eprintln!("║  Extract the HAETAE package and place it at vendor/haetae/               ║");
         eprintln!("╚══════════════════════════════════════════════════════════╝");
         eprintln!();
         std::process::exit(1);
@@ -121,7 +126,7 @@ fn compile_kpqc_native() {
 /// # Source layout assumption
 ///
 /// The SMAUG-T reference repository is expected to have the following layout
-/// (based on the kpqclib GitHub repository at the time of writing):
+/// (based on the KpqC competition reference submission layout):
 ///
 /// ```
 /// vendor/smaug-t/

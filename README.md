@@ -213,8 +213,8 @@ quantum-vault/
 │           └─ main.rs     ← --backend dev|kpqc flag
 │
 ├─ vendor/                  ← (gitignored) C reference implementations
-│   ├─ smaug-t/             ←   git clone https://github.com/kpqclib/SMAUG-T
-│   └─ haetae/              ←   git clone https://github.com/kpqclib/HAETAE
+│   ├─ smaug-t/             ←   extracted SMAUG-T reference implementation
+│   └─ haetae/              ←   extracted HAETAE reference implementation
 │
 ├─ web-demo/                ← Next.js interactive demo
 │   ├─ package.json

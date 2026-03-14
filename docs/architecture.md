@@ -160,9 +160,13 @@ Feature-gated three-tier implementation for SMAUG-T (KEM) and HAETAE (signature)
 | *(neither)*  | `kpqc.rs` stub branch | Returns `NotAvailable` with a helpful feature hint |
 
 **Vendoring the C reference implementations:**
+
+The reference implementations are distributed through the KpqC competition at
+<https://kpqc.or.kr/competition.html>. There is no official public GitHub mirror.
+Download the submission packages, extract them, and place the source trees at
+`vendor/smaug-t/` and `vendor/haetae/`, then:
+
 ```sh
-git clone https://github.com/kpqclib/SMAUG-T vendor/smaug-t
-git clone https://github.com/kpqclib/HAETAE   vendor/haetae
 cargo build -p qv-core --features kpqc-native
 ```
 
