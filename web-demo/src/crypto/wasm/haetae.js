@@ -1,10 +1,15 @@
 // This code implements the `-sMODULARIZE` settings by taking the generated
 // JS program code (INNER_JS_CODE) and wrapping it in a factory function.
 
-// When targeting node and ES6 we use `await import ..` in the generated code
-// so the outer function needs to be marked as async.
-async function createHaetaeModule(moduleArg = {}) {
-  var moduleRtn;
+// Single threaded MINIMAL_RUNTIME programs do not need access to
+// document.currentScript, so a simple export declaration is enough.
+var createHaetaeModule = (() => {
+  // When MODULARIZE this JS may be executed later,
+  // after document.currentScript is gone, so we save it.
+  // In EXPORT_ES6 mode we can just use 'import.meta.url'.
+  var _scriptName = globalThis.document?.currentScript?.src;
+  return async function(moduleArg = {}) {
+    var moduleRtn;
 
 // include: shell.js
 // include: minimum_runtime_check.js
@@ -35,15 +40,6 @@ var ENVIRONMENT_IS_WORKER = !!globalThis.WorkerGlobalScope;
 var ENVIRONMENT_IS_NODE = globalThis.process?.versions?.node && globalThis.process?.type != 'renderer';
 var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 
-if (ENVIRONMENT_IS_NODE) {
-  // When building an ES module `require` is not normally available.
-  // We need to use `createRequire()` to construct the require()` function.
-  const { createRequire } = await import('node:module');
-  /** @suppress{duplicate} */
-  var require = createRequire(import.meta.url);
-
-}
-
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
 
@@ -54,7 +50,10 @@ var quit_ = (status, toThrow) => {
   throw toThrow;
 };
 
-var _scriptName = import.meta.url;
+if (typeof __filename != 'undefined') { // Node
+  _scriptName = __filename;
+} else
+  /*no-op*/{}
 
 // `/` should be present at the end if `scriptDirectory` is not empty
 var scriptDirectory = '';
@@ -74,9 +73,7 @@ if (ENVIRONMENT_IS_NODE) {
   // the complexity of lazy-loading.
   var fs = require('node:fs');
 
-  if (_scriptName.startsWith('file:')) {
-    scriptDirectory = require('node:path').dirname(require('node:url').fileURLToPath(_scriptName)) + '/';
-  }
+  scriptDirectory = __dirname + '/';
 
 // include: node_shell_read.js
 readBinary = (filename) => {
@@ -229,7 +226,7 @@ function updateMemoryViews() {
   var b = wasmMemory.buffer;
   HEAP8 = new Int8Array(b);
   HEAP16 = new Int16Array(b);
-  Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
+  HEAPU8 = new Uint8Array(b);
   HEAPU16 = new Uint16Array(b);
   HEAP32 = new Int32Array(b);
   HEAPU32 = new Uint32Array(b);
@@ -318,14 +315,7 @@ function abort(what) {
 var wasmBinaryFile;
 
 function findWasmBinary() {
-
-  if (Module['locateFile']) {
-    return locateFile('haetae.wasm');
-  }
-
-  // Use bundler-friendly `new URL(..., import.meta.url)` pattern; works in browsers too.
-  return new URL('haetae.wasm', import.meta.url).href;
-
+  return locateFile('haetae.wasm');
 }
 
 function getBinarySync(file) {
@@ -527,98 +517,6 @@ async function createWasm() {
 
   var __abort_js = () =>
       abort('');
-
-  var getHeapMax = () =>
-      // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
-      // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
-      // for any code that deals with heap sizes, which would require special
-      // casing all heap size related code to treat 0 specially.
-      2147483648;
-  
-  var alignMemory = (size, alignment) => {
-      return Math.ceil(size / alignment) * alignment;
-    };
-  
-  var growMemory = (size) => {
-      var oldHeapSize = wasmMemory.buffer.byteLength;
-      var pages = ((size - oldHeapSize + 65535) / 65536) | 0;
-      try {
-        // round size grow request up to wasm page size (fixed 64KB per spec)
-        wasmMemory.grow(pages); // .grow() takes a delta compared to the previous size
-        updateMemoryViews();
-        return 1 /*success*/;
-      } catch(e) {
-      }
-      // implicit 0 return to save code size (caller will cast "undefined" into 0
-      // anyhow)
-    };
-  var _emscripten_resize_heap = (requestedSize) => {
-      var oldSize = HEAPU8.length;
-      // With CAN_ADDRESS_2GB or MEMORY64, pointers are already unsigned.
-      requestedSize >>>= 0;
-      // With multithreaded builds, races can happen (another thread might increase the size
-      // in between), so return a failure, and let the caller retry.
-  
-      // Memory resize rules:
-      // 1.  Always increase heap size to at least the requested size, rounded up
-      //     to next page multiple.
-      // 2a. If MEMORY_GROWTH_LINEAR_STEP == -1, excessively resize the heap
-      //     geometrically: increase the heap size according to
-      //     MEMORY_GROWTH_GEOMETRIC_STEP factor (default +20%), At most
-      //     overreserve by MEMORY_GROWTH_GEOMETRIC_CAP bytes (default 96MB).
-      // 2b. If MEMORY_GROWTH_LINEAR_STEP != -1, excessively resize the heap
-      //     linearly: increase the heap size by at least
-      //     MEMORY_GROWTH_LINEAR_STEP bytes.
-      // 3.  Max size for the heap is capped at 2048MB-WASM_PAGE_SIZE, or by
-      //     MAXIMUM_MEMORY, or by ASAN limit, depending on which is smallest
-      // 4.  If we were unable to allocate as much memory, it may be due to
-      //     over-eager decision to excessively reserve due to (3) above.
-      //     Hence if an allocation fails, cut down on the amount of excess
-      //     growth, in an attempt to succeed to perform a smaller allocation.
-  
-      // A limit is set for how much we can grow. We should not exceed that
-      // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
-      var maxHeapSize = getHeapMax();
-      if (requestedSize > maxHeapSize) {
-        return false;
-      }
-  
-      // Loop through potential heap size increases. If we attempt a too eager
-      // reservation that fails, cut down on the attempted size and reserve a
-      // smaller bump instead. (max 3 times, chosen somewhat arbitrarily)
-      for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
-        var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
-        // but limit overreserving (default to capping at +96MB overgrowth at most)
-        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
-  
-        var newSize = Math.min(maxHeapSize, alignMemory(Math.max(requestedSize, overGrownHeapSize), 65536));
-  
-        var replacement = growMemory(newSize);
-        if (replacement) {
-  
-          return true;
-        }
-      }
-      return false;
-    };
-
-  var initRandomFill = () => {
-      // This block is not needed on v19+ since crypto.getRandomValues is builtin
-      if (ENVIRONMENT_IS_NODE) {
-        var nodeCrypto = require('node:crypto');
-        return (view) => nodeCrypto.randomFillSync(view);
-      }
-  
-      return (view) => crypto.getRandomValues(view);
-    };
-  var randomFill = (view) => {
-      // Lazily init on the first invocation.
-      (randomFill = initRandomFill())(view);
-    };
-  var _random_get = (buffer, size) => {
-      randomFill(HEAPU8.subarray(buffer, buffer + size));
-      return 0;
-    };
 
   var getCFunc = (ident) => {
       var func = Module['_' + ident]; // closure exported function
@@ -887,6 +785,7 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 
 // end include: postlibrary.js
 
+function js_randombytes_checked(buf,len) { try { crypto.getRandomValues(new Uint8Array(Module.HEAPU8.buffer, buf, len)); return 0; } catch(e) { return -1; } }
 
 // Imports from the Wasm binary.
 var _haetae_secure_zeroize,
@@ -896,8 +795,6 @@ var _haetae_secure_zeroize,
   _haetae_publickeybytes,
   _haetae_secretkeybytes,
   _haetae_sigbytes,
-  _malloc,
-  _free,
   __emscripten_stack_restore,
   __emscripten_stack_alloc,
   _emscripten_stack_get_current,
@@ -914,8 +811,6 @@ function assignWasmExports(wasmExports) {
   _haetae_publickeybytes = Module['_haetae_publickeybytes'] = wasmExports['haetae_publickeybytes'];
   _haetae_secretkeybytes = Module['_haetae_secretkeybytes'] = wasmExports['haetae_secretkeybytes'];
   _haetae_sigbytes = Module['_haetae_sigbytes'] = wasmExports['haetae_sigbytes'];
-  _malloc = Module['_malloc'] = wasmExports['malloc'];
-  _free = Module['_free'] = wasmExports['free'];
   __emscripten_stack_restore = wasmExports['_emscripten_stack_restore'];
   __emscripten_stack_alloc = wasmExports['_emscripten_stack_alloc'];
   _emscripten_stack_get_current = wasmExports['emscripten_stack_get_current'];
@@ -927,9 +822,7 @@ var wasmImports = {
   /** @export */
   _abort_js: __abort_js,
   /** @export */
-  emscripten_resize_heap: _emscripten_resize_heap,
-  /** @export */
-  random_get: _random_get
+  js_randombytes_checked
 };
 
 
@@ -998,9 +891,16 @@ if (runtimeInitialized)  {
 
 
 
-  return moduleRtn;
-}
+    return moduleRtn;
+  };
+})();
 
 // Export using a UMD style export, or ES6 exports if selected
-export default createHaetaeModule;
+if (typeof exports === 'object' && typeof module === 'object') {
+  module.exports = createHaetaeModule;
+  // This default export looks redundant, but it allows TS to import this
+  // commonjs style module.
+  module.exports.default = createHaetaeModule;
+} else if (typeof define === 'function' && define['amd'])
+  define([], () => createHaetaeModule);
 
