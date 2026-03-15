@@ -296,7 +296,19 @@ async function init(): Promise<void> {
   });
 
   // Wire language toggle now that renderWall is in scope
-  setupLangToggle(() => renderWall());
+  setupLangToggle(() => {
+    // Close any open panel so it re-renders in the new language
+    if (selectedBox) {
+      const currentBox = selectedBox;
+      selectedBox = null;
+      closePanel(panelEl);
+      renderWall();
+      // Re-open the same box in the new language
+      setTimeout(() => handleBoxClick(currentBox), 50);
+    } else {
+      renderWall();
+    }
+  });
 
   // Initial render
   recordInitStep('ui:render:start');
