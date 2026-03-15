@@ -322,6 +322,10 @@ function setupLangToggle(onLangChange?: () => void): void {
         const translated = el.getAttribute(`data-${lang}`);
         if (translated !== null) el.textContent = translated;
       });
+      // Toggle language-specific password tables
+      document.querySelectorAll<HTMLElement>('[data-lang-table]').forEach(table => {
+        table.style.display = table.dataset.langTable === lang ? '' : 'none';
+      });
       onLangChange?.();
     });
   });

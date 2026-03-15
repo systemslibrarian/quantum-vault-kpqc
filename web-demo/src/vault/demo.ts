@@ -13,6 +13,7 @@ interface DemoBox {
 }
 
 const DEMO_BOXES: DemoBox[] = [
+  // English demo boxes
   {
     number: '03',
     secret: 'The treasure map is under the old oak tree',
@@ -27,6 +28,22 @@ const DEMO_BOXES: DemoBox[] = [
     number: '09',
     secret: 'The meeting is moved to Friday at noon',
     passwords: ['monday', 'tuesday', 'wednesday'],
+  },
+  // Korean demo boxes (한국어 데모 보관함)
+  {
+    number: '01',
+    secret: '보물 지도는 오래된 참나무 아래에 있다',
+    passwords: ['무궁화', '태극기', '한라산'],
+  },
+  {
+    number: '04',
+    secret: '발사 코드: 가나다-7749-라마바',
+    passwords: ['거북선', '첨성대', '석굴암'],
+  },
+  {
+    number: '07',
+    secret: '회의가 금요일 정오로 변경되었습니다',
+    passwords: ['봄바람', '여름비', '가을달'],
   },
 ];
 

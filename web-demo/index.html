@@ -83,7 +83,8 @@
             Demo boxes are pre-loaded. Use any 2 of 3 passwords to open:
           </p>
           <div class="table-scroll">
-          <table class="hint-passwords" aria-labelledby="hint-lead-text">
+          <!-- English demo passwords -->
+          <table class="hint-passwords lang-table" data-lang-table="en" aria-labelledby="hint-lead-text">
             <thead class="sr-only">
               <tr>
                 <th scope="col">Box</th>
@@ -110,6 +111,37 @@
                 <td><code>monday</code></td>
                 <td><code>tuesday</code></td>
                 <td><code>wednesday</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Korean demo passwords (한국어) -->
+          <table class="hint-passwords lang-table" data-lang-table="ko" aria-labelledby="hint-lead-text" style="display:none;">
+            <thead class="sr-only">
+              <tr>
+                <th scope="col">보관함</th>
+                <th scope="col">비밀번호 1</th>
+                <th scope="col">비밀번호 2</th>
+                <th scope="col">비밀번호 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" class="hint-box-num">01</th>
+                <td><code>무궁화</code></td>
+                <td><code>태극기</code></td>
+                <td><code>한라산</code></td>
+              </tr>
+              <tr>
+                <th scope="row" class="hint-box-num">04</th>
+                <td><code>거북선</code></td>
+                <td><code>첨성대</code></td>
+                <td><code>석굴암</code></td>
+              </tr>
+              <tr>
+                <th scope="row" class="hint-box-num">07</th>
+                <td><code>봄바람</code></td>
+                <td><code>여름비</code></td>
+                <td><code>가을달</code></td>
               </tr>
             </tbody>
           </table>
