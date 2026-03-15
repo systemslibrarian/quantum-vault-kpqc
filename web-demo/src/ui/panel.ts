@@ -65,6 +65,12 @@ export function showDepositPanel(
           <div class="field-error" id="err-carol" role="alert" aria-live="assertive"></div>
         </div>
       </div>
+      <div class="show-password-toggle">
+        <label>
+          <input type="checkbox" id="show-pw-toggle" />
+          ${t('showPasswords')}
+        </label>
+      </div>
       <p class="panel-note">${t('thresholdNote')}</p>
       <div id="pipeline-area"></div>
       <div class="form-actions">
@@ -84,6 +90,15 @@ export function showDepositPanel(
   `;
 
   openPanel(panel);
+
+  // Password visibility toggle
+  const pwToggle = panel.querySelector<HTMLInputElement>('#show-pw-toggle')!;
+  pwToggle.addEventListener('change', () => {
+    const type = pwToggle.checked ? 'text' : 'password';
+    (['pw-alice', 'pw-bob', 'pw-carol']).forEach(id => {
+      panel.querySelector<HTMLInputElement>(`#${id}`)!.type = type;
+    });
+  });
 
   // Import file handling
   const fileInput = panel.querySelector<HTMLInputElement>('#import-file')!;
@@ -245,6 +260,12 @@ export function showRetrievePanel(
                  placeholder="${t('carolPh')}" />
         </div>
       </div>
+      <div class="show-password-toggle">
+        <label>
+          <input type="checkbox" id="show-rpw-toggle" />
+          ${t('showPasswords')}
+        </label>
+      </div>
       <div id="pipeline-area"></div>
       <div class="form-actions">
         <button class="btn-primary" id="btn-open">${t('openBtn')}</button>
@@ -255,6 +276,16 @@ export function showRetrievePanel(
   `;
 
   openPanel(panel);
+
+  // Retrieve password visibility toggle
+  const rpwToggle = panel.querySelector<HTMLInputElement>('#show-rpw-toggle')!;
+  rpwToggle.addEventListener('change', () => {
+    const type = rpwToggle.checked ? 'text' : 'password';
+    (['rpw-alice', 'rpw-bob', 'rpw-carol']).forEach(id => {
+      panel.querySelector<HTMLInputElement>(`#${id}`)!.type = type;
+    });
+  });
+
   // Move focus into the panel so keyboard/screen-reader users start at first password field
   setTimeout(() => {
     const first = panel.querySelector<HTMLElement>('input[type="password"]');
