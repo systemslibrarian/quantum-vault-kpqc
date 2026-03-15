@@ -57,7 +57,10 @@ async function init(): Promise<void> {
   if (existing) {
     recordInitStep('state:load:existing');
     state = existing;
-    showHintBanner();
+    // Only show hint banner if there are occupied boxes
+    if (Object.values(state.boxes).some(b => b !== null)) {
+      showHintBanner();
+    }
   } else {
     recordInitStep('state:load:none');
     // First visit: generate real demo boxes and show hint.
