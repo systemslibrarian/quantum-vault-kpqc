@@ -625,10 +625,42 @@ body {
 .algo-badge.algo-sig .algo-dot  { background: #C60C30; }
 .algo-badge.algo-sym .algo-dot  { background: #4a7a60; }
 
-/* ---------- Reset Button ---------- */
+/* ---------- Vault Management Buttons ---------- */
 .reset-area {
   text-align: center;
   margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-vault-action {
+  background: none;
+  color: #8a8078;
+  border: 1px solid #c8c4bc;
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.btn-vault-action:hover {
+  color: #003478;
+  border-color: #003478;
+}
+
+.btn-vault-action.btn-danger:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.btn-import-label {
+  display: inline-flex;
+  align-items: center;
 }
 
 .btn-reset {

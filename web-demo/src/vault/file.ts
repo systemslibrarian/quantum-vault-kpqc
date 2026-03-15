@@ -7,7 +7,7 @@
 import { toBase64, fromBase64, encode } from '../crypto/utils';
 import { haetaeVerify } from '../crypto/haetae';
 import type { SealedBox, WrappedShare } from '../crypto/pipeline';
-import type { VaultBox, WrappedShareSerialized } from './state';
+import type { VaultBox, VaultState, WrappedShareSerialized } from './state';
 
 // Version identifier for the file format
 const QVAULT_VERSION = 'qvault-v1';
@@ -393,4 +393,109 @@ export function vaultBoxToSealedBox(vb: VaultBox): SealedBox {
     sigPublicKey: fromBase64(vb.sigPublicKey),
     createdAt: vb.createdAt,
   };
+}
+
+// ---- Full vault export / import ----
+
+const FULL_VAULT_VERSION = 'quantum-vault-v1';
+
+interface FullVaultFile {
+  version: string;
+  exportedAt: string;
+  boxes: Record<string, VaultBox>;
+}
+
+/**
+ * Export the entire vault state as a downloadable .quantum-vault file.
+ */
+export function exportFullVault(state: VaultState): void {
+  const file: FullVaultFile = {
+    version: FULL_VAULT_VERSION,
+    exportedAt: new Date().toISOString(),
+    boxes: state.boxes,
+  };
+  const json = JSON.stringify(file, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `quantum-vault-${new Date().toISOString().slice(0, 10)}.quantum-vault`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Import a full vault from a .quantum-vault file.
+ * Validates structure and verifies HAETAE signatures on all boxes.
+ * Returns a new VaultState on success.
+ */
+export async function importFullVault(file: File): Promise<VaultState> {
+  const text = await file.text();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new QvaultImportError('Invalid file format', 'INVALID_JSON');
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new QvaultImportError('Invalid file format', 'INVALID_JSON');
+  }
+  const obj = parsed as Record<string, unknown>;
+
+  if (obj.version !== FULL_VAULT_VERSION) {
+    throw new QvaultImportError(
+      `Unsupported vault format: ${String(obj.version)}`,
+      'UNSUPPORTED_VERSION',
+    );
+  }
+
+  if (typeof obj.boxes !== 'object' || obj.boxes === null) {
+    throw new QvaultImportError('Missing boxes', 'MISSING_FIELD');
+  }
+
+  const rawBoxes = obj.boxes as Record<string, unknown>;
+  const validatedBoxes: Record<string, VaultBox> = {};
+
+  for (const [key, rawBox] of Object.entries(rawBoxes)) {
+    // Validate box key is a two-digit string "01"-"09"
+    if (!/^0[1-9]$/.test(key)) {
+      throw new QvaultImportError(
+        `Invalid box key: ${key}`,
+        'CORRUPTED_DATA',
+      );
+    }
+
+    const box = rawBox as VaultBox;
+
+    // Basic structure check
+    if (
+      !box.ciphertext || !box.nonce || !box.signature ||
+      !box.sigPublicKey || !box.createdAt ||
+      !Array.isArray(box.wrappedShares) || box.wrappedShares.length !== 3
+    ) {
+      throw new QvaultImportError(
+        `Incomplete container in box ${key}`,
+        'MISSING_FIELD',
+      );
+    }
+
+    // Verify HAETAE signature
+    const sealedBox = vaultBoxToSealedBox(box);
+    const containerData = buildContainerData(sealedBox);
+    const valid = haetaeVerify(sealedBox.signature, containerData, sealedBox.sigPublicKey);
+    if (!valid) {
+      throw new QvaultImportError(
+        `Signature invalid on box ${key} — file may be tampered`,
+        'SIGNATURE_INVALID',
+      );
+    }
+
+    validatedBoxes[key] = box;
+  }
+
+  return { boxes: validatedBoxes, version: 2 };
 }

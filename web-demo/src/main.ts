@@ -8,7 +8,7 @@ import type { VaultState } from './vault/state';
 import { generateDemoBoxes } from './vault/demo';
 import { sealMessage, openBox } from './crypto/pipeline';
 import type { SealedBox } from './crypto/pipeline';
-import { exportQvault, vaultBoxToSealedBox } from './vault/file';
+import { exportQvault, vaultBoxToSealedBox, exportFullVault, importFullVault, QvaultImportError } from './vault/file';
 import { renderVaultWall } from './ui/wall';
 import {
   showDepositPanel,
@@ -232,6 +232,63 @@ async function init(): Promise<void> {
     }
     clearVaultState();
     state = await generateDemoBoxes(emptyVaultState());
+    saveVaultState(state);
+    selectedBox = null;
+    closePanel(panelEl);
+    renderWall();
+  });
+
+  // ---- Export entire vault ----
+  document.getElementById('btn-export-vault')?.addEventListener('click', () => {
+    const boxCount = Object.keys(state.boxes).length;
+    if (boxCount === 0) {
+      alert('Vault is empty — nothing to export.');
+      return;
+    }
+    exportFullVault(state);
+  });
+
+  // ---- Import entire vault ----
+  document.getElementById('input-import-vault')?.addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!confirm('Import vault? This will replace all current boxes with the imported data.')) {
+      input.value = '';
+      return;
+    }
+
+    try {
+      const imported = await importFullVault(file);
+      state = imported;
+      saveVaultState(state);
+      selectedBox = null;
+      closePanel(panelEl);
+      renderWall();
+      alert(`Vault imported successfully — ${Object.keys(state.boxes).length} box(es) loaded.`);
+    } catch (err) {
+      if (err instanceof QvaultImportError) {
+        alert(`Import failed: ${err.message}`);
+      } else {
+        alert(`Import failed: ${String(err)}`);
+      }
+    } finally {
+      input.value = '';
+    }
+  });
+
+  // ---- Clear vault ----
+  document.getElementById('btn-clear-vault')?.addEventListener('click', () => {
+    if (Object.keys(state.boxes).length === 0) {
+      alert('Vault is already empty.');
+      return;
+    }
+    if (!confirm('Clear vault? All boxes will be permanently deleted. This cannot be undone.')) {
+      return;
+    }
+    clearVaultState();
+    state = emptyVaultState();
     saveVaultState(state);
     selectedBox = null;
     closePanel(panelEl);

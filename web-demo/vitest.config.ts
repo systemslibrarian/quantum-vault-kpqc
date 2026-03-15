@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     // Resolve bare imports the same way Vite does
     root: '.',
+    exclude: ['e2e/**', '**/node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

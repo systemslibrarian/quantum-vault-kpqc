@@ -186,52 +186,29 @@
            data-ko="브라우저 인터페이스는 알고리즘의 C 레퍼런스 구현을 컴파일한 WebAssembly 모듈과 상호작용합니다. 모든 암호화 연산은 브라우저 내에서 로컬로 수행되며 서버로 데이터가 전송되지 않습니다.">
           The browser interface interacts with WebAssembly modules compiled from the original C reference implementations of the algorithms. All cryptographic operations occur locally in the browser — no data is sent to any server.
         </p>
-        <div class="demo-credentials">
-          <h3 class="demo-cred-title"
-              data-en="Demo box passwords (any 2 of 3 unlock each box)"
-              data-ko="데모 보관함 비밀번호 (3개 중 2개로 열림)">
-            Demo box passwords (any 2 of 3 unlock each box)
-          </h3>
-          <div class="table-scroll">
-          <table class="cred-table" aria-label="Demo box passwords">
-            <thead>
-              <tr>
-                <th scope="col" data-en="Box" data-ko="보관함">Box</th>
-                <th scope="col" data-en="Password 1" data-ko="비밀번호 1">Password 1</th>
-                <th scope="col" data-en="Password 2" data-ko="비밀번호 2">Password 2</th>
-                <th scope="col" data-en="Password 3" data-ko="비밀번호 3">Password 3</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row" class="cred-box">03</th>
-                <td><code>ruby</code></td>
-                <td><code>emerald</code></td>
-                <td><code>diamond</code></td>
-              </tr>
-              <tr>
-                <th scope="row" class="cred-box">06</th>
-                <td><code>fortress</code></td>
-                <td><code>bastion</code></td>
-                <td><code>citadel</code></td>
-              </tr>
-              <tr>
-                <th scope="row" class="cred-box">09</th>
-                <td><code>monday</code></td>
-                <td><code>tuesday</code></td>
-                <td><code>wednesday</code></td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
       </section>
 
-      <!-- Reset -->
+      <!-- Vault management -->
       <div class="reset-area">
+        <button class="btn-vault-action" id="btn-export-vault"
+                data-en="Export entire vault"
+                data-ko="전체 볼트 내보내기">
+          Export entire vault
+        </button>
+        <label class="btn-vault-action btn-import-label" id="btn-import-vault-label"
+               data-en="Import vault file"
+               data-ko="볼트 파일 가져오기">
+          Import vault file
+          <input type="file" id="input-import-vault" accept=".quantum-vault" hidden />
+        </label>
+        <button class="btn-vault-action btn-danger" id="btn-clear-vault"
+                data-en="Clear vault"
+                data-ko="볼트 초기화">
+          Clear vault
+        </button>
         <button class="btn-reset" id="btn-reset"
                 data-en="Reset vault to demo state"
-                data-ko="초기화">
+                data-ko="데모 상태로 초기화">
           Reset vault to demo state
         </button>
       </div>
