@@ -57,6 +57,7 @@ async function init(): Promise<void> {
   if (existing) {
     recordInitStep('state:load:existing');
     state = existing;
+    showHintBanner();
   } else {
     recordInitStep('state:load:none');
     // First visit: generate real demo boxes and show hint.
