@@ -36,7 +36,10 @@ jobs:
         run: cargo build --workspace
 
       - name: Run tests (default features)
-        run: cargo test --workspace
+        run: cargo test --workspace --all-features
+
+      - name: Run tamper, corpus, nonce, zeroize, and differential tests
+        run: cargo test --workspace -p qv-core --test tamper_tests --test corpus_tests --test nonce_tests --test zeroize_tests --test differential_tests
 
       - name: Run tests (wasm feature on qv-core)
         run: cargo test -p qv-core --features wasm
@@ -46,6 +49,14 @@ jobs:
 
       - name: Check formatting
         run: cargo fmt --all -- --check
+
+      - name: Fuzz container parser (short smoke run)
+        run: |
+          rustup install nightly --no-self-update
+          cargo +nightly install cargo-fuzz --locked 2>/dev/null || true
+          cargo +nightly fuzz run fuzz_container_parse \
+            --manifest-path crates/qv-core/fuzz/Cargo.toml \
+            -- -max_total_time=30 -max_len=4096
 
       - name: Security audit
         run: |

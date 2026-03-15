@@ -1,0 +1,1 @@
+{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":null}

@@ -32,6 +32,7 @@ pub mod shamir;
 pub mod wasm;
 
 pub use container::{EncryptedKeyShare, QuantumVaultContainer};
+pub use encrypt::generate_nonce;
 pub use shamir::{reconstruct_secret, split_secret, Share as KeyShare};
 
 use anyhow::Result;

@@ -68,6 +68,10 @@ getrandom = { version = "0.2", features = ["js"] }
 aes-gcm = { workspace = true }
 criterion = { workspace = true }
 proptest = { workspace = true }
+# sha2 needed by differential tests to independently verify SHA-256-based dev backend
+sha2 = { workspace = true }
+# zeroize needed by zeroize_tests to call .zeroize() and check ZeroizeOnDrop
+zeroize = { workspace = true }
 
 [[bench]]
 name = "crypto_bench"

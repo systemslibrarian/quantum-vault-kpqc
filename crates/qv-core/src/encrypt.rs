@@ -15,6 +15,16 @@ use anyhow::{anyhow, Result};
 use rand::RngCore;
 use zeroize::Zeroize;
 
+/// Generate a fresh random 96-bit (12-byte) AES-GCM nonce.
+///
+/// Exposed so that external tests can verify nonce uniqueness properties
+/// without having to go through the full encryption pipeline.
+pub fn generate_nonce() -> [u8; 12] {
+    let mut nonce = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut nonce);
+    nonce
+}
+
 /// Encrypts `plaintext` and returns a signed [`QuantumVaultContainer`].
 ///
 /// Steps:
