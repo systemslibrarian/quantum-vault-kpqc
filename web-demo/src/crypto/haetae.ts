@@ -7,7 +7,9 @@ import type { HaetaeModule, EmscriptenModuleFactory } from './wasm-types';
 let haetaeModule: HaetaeModule | null = null;
 
 export async function initHaetae(): Promise<void> {
-  const createModule = (await import('./wasm/haetae.js')).default as EmscriptenModuleFactory<HaetaeModule>;
+  const imported = await import('./wasm/haetae.js');
+  // Handle both ES6 default export and UMD/CommonJS
+  const createModule = (imported.default || imported) as EmscriptenModuleFactory<HaetaeModule>;
   haetaeModule = await createModule({
     locateFile: (path: string) => {
       const base = import.meta.env.BASE_URL ?? '/';

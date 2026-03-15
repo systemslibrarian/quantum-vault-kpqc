@@ -9,7 +9,9 @@ let smaugModule: SmaugModule | null = null;
 export async function initSmaug(): Promise<void> {
   // Dynamic import of the Emscripten-generated JS loader.
   // Vite copies the .wasm file to public/ and the loader fetches it from there.
-  const createModule = (await import('./wasm/smaug.js')).default as EmscriptenModuleFactory<SmaugModule>;
+  const imported = await import('./wasm/smaug.js');
+  // Handle both ES6 default export and UMD/CommonJS
+  const createModule = (imported.default || imported) as EmscriptenModuleFactory<SmaugModule>;
   smaugModule = await createModule({
     // Tell Emscripten where the .wasm file lives at runtime.
     locateFile: (path: string) => {
