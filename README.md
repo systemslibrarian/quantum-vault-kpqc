@@ -27,6 +27,10 @@ Three demo boxes are pre-sealed on first visit. Each requires two correct passwo
 > **Note:** These are demo credentials for exploring the UI. They are not part of the `.qvault` security model and do not represent production password practices. In real use, each participant would choose their own strong password.
 
 Unlock any box by entering **any two** of its three passwords.
+A **"Show passwords"** checkbox is available to reveal typed passwords for convenience.
+
+Once opened, you can view the decrypted secret and, if desired, clear the box to reset it.
+(Reloading the page will restore the original demo boxes if they become empty.)
 
 ---
 

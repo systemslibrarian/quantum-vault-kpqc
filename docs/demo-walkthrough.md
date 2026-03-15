@@ -42,7 +42,8 @@ form.
 
 ## 2. Pre-Loaded Demo Boxes
 
-These three boxes are available on every fresh page load:
+These three boxes are available on every fresh page load. If you delete them,
+reloading the page will restore them to their original state.
 
 | Box | Secret | Alice's key | Bob's key | Carol's key |
 |-----|--------|-------------|-----------|-------------|
@@ -60,12 +61,14 @@ threshold property.
 
 Click an **empty** box to open the Deposit panel.
 
-### 3.1 Input Validation
+### 3.1 Input Validation and Options
 
 | Field | Rule |
 |-------|------|
 | Secret message | Must not be empty |
 | Alice / Bob / Carol key | Minimum 4 characters; all three must be distinct |
+
+A **"Show passwords"** checkbox is available to reveal typed passwords.
 
 Validation is client-side only; it runs before any cryptographic work starts.
 
