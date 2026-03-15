@@ -420,6 +420,15 @@ body {
   cursor: not-allowed;
 }
 
+.btn-outline.btn-delete {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.btn-outline.btn-delete:hover {
+  background: #fdf2f1;
+}
+
 /* ---------- Export / Import ---------- */
 .panel-actions-row {
   display: flex;

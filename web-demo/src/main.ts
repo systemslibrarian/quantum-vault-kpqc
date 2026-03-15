@@ -145,6 +145,20 @@ async function init(): Promise<void> {
       infoEl.className = 'result-info';
       infoEl.textContent = `${result.validShareCount} ${t('thresholdMet')}`;
       resultEl.appendChild(infoEl);
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'btn-outline btn-delete';
+      clearBtn.textContent = '✕ ' + t('clearBtn');
+      clearBtn.style.marginTop = '16px';
+      clearBtn.onclick = () => {
+        if (confirm(t('confirmClear'))) {
+          delete state.boxes[boxNumber];
+          saveVaultState(state);
+          closePanel(panelEl);
+          renderWall();
+        }
+      };
+      resultEl.appendChild(clearBtn);
     } else {
       updateRetrieveTitle(panelEl, `Box ${boxNumber} — ${t('accessDenied')}`);
 
