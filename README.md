@@ -96,7 +96,7 @@ The NIST PQC process selected ML-KEM (Kyber) and ML-DSA (Dilithium). This projec
 quantum-vault-kpqc/
 │
 ├─ crates/
-│   ├─ qv-core/       ← Rust crypto library (AES-GCM + Shamir + 45 unit tests)
+│   ├─ qv-core/       ← Rust crypto library (AES-GCM + Shamir + security/fuzz tests)
 │   └─ qv-cli/        ← CLI binary
 │
 ├─ wasm/
@@ -214,11 +214,11 @@ Round-trip tests confirmed:
 
 ## Rust CLI
 
-The `qv-core` crate provides the same cryptographic stack in Rust (AES-256-GCM + Shamir SSS, with a pluggable backend interface designed for KpqC FFI).
+The `qv-core` crate provides the same threshold-encryption stack in Rust with a pluggable backend interface for KpqC FFI. The hardened container format is `QVKP` version `2`; the native backend path uses `SMAUG-T-3` and `HAETAE-3` identifiers.
 
 ```bash
 cargo build --release
-cargo test           # 45 unit tests
+cargo test           # workspace tests
 cargo bench          # criterion benchmarks
 ```
 

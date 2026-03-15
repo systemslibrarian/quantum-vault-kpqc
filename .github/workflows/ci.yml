@@ -95,6 +95,11 @@ jobs:
           cargo install cargo-audit --locked
           cargo audit
 
+      - name: Cargo deny
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check advisories bans sources
+
   test-web-demo:
     name: Web demo — Vitest
     runs-on: ubuntu-latest
