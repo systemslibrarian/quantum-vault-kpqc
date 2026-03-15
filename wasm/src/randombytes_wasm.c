@@ -12,7 +12,11 @@
 
 EM_JS(int, js_randombytes_checked, (uint8_t *buf, size_t len), {
     try {
-        crypto.getRandomValues(new Uint8Array(Module.HEAPU8.buffer, buf, len));
+        // Generate random bytes into a temporary array
+        var tmp = new Uint8Array(len);
+        crypto.getRandomValues(tmp);
+        // Copy into WASM memory using HEAPU8 (view is always current after memory ops)
+        HEAPU8.set(tmp, buf);
         return 0;
     } catch(e) {
         return -1;

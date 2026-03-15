@@ -869,7 +869,7 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 
 // end include: postlibrary.js
 
-function js_randombytes_checked(buf,len) { try { crypto.getRandomValues(new Uint8Array(Module.HEAPU8.buffer, buf, len)); return 0; } catch(e) { return -1; } }
+function js_randombytes_checked(buf,len) { try { var tmp = new Uint8Array(len); crypto.getRandomValues(tmp); HEAPU8.set(tmp, buf); return 0; } catch(e) { return -1; } }
 
 // Imports from the Wasm binary.
 var _smaug_secure_zeroize,
