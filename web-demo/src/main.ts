@@ -36,6 +36,9 @@ async function init(): Promise<void> {
   const existing = loadVaultState();
   if (existing) {
     state = existing;
+    // Fix: Ensure demo boxes exist if they were missing or failed to initialize
+    state = await generateDemoBoxes(state);
+    saveVaultState(state);
   } else {
     // First visit: generate real demo boxes and show hint
     state = await generateDemoBoxes(emptyVaultState());
