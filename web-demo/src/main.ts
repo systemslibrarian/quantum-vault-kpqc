@@ -5,7 +5,7 @@ import './styles/vault.css';
 import { initCrypto } from './crypto/init';
 import { loadVaultState, saveVaultState, clearVaultState, emptyVaultState, serializeSealedBox, deserializeSealedBox } from './vault/state';
 import type { VaultState } from './vault/state';
-import { generateDemoBoxes } from './vault/demo';
+import { generateDemoBoxes, removeDemoBoxes, clearDemoTracker } from './vault/demo';
 import { sealMessage, openBox } from './crypto/pipeline';
 import type { SealedBox } from './crypto/pipeline';
 import { exportQvault, vaultBoxToSealedBox, exportFullVault, importFullVault, QvaultImportError } from './vault/file';
@@ -20,7 +20,7 @@ import {
 import { animateSealPipeline, animateOpenPipeline } from './ui/pipeline-ui';
 import { revealMessage, showGibberish } from './ui/reveal';
 import { sleep } from './crypto/utils';
-import { setLang, t } from './i18n';
+import { setLang, getLang, t } from './i18n';
 
 const initDiagnostics: string[] = [];
 
@@ -67,7 +67,7 @@ async function init(): Promise<void> {
     // If generation fails (e.g. stale cache/corrupt runtime), recover to empty state.
     try {
       recordInitStep('demo:generate:start');
-      state = await generateDemoBoxes(emptyVaultState());
+      state = await generateDemoBoxes(emptyVaultState(), getLang());
       saveVaultState(state);
       showHintBanner();
       recordInitStep('demo:generate:done');
@@ -244,7 +244,8 @@ async function init(): Promise<void> {
       return;
     }
     clearVaultState();
-    state = await generateDemoBoxes(emptyVaultState());
+    clearDemoTracker();
+    state = await generateDemoBoxes(emptyVaultState(), getLang());
     saveVaultState(state);
     selectedBox = null;
     closePanel(panelEl);
@@ -301,6 +302,7 @@ async function init(): Promise<void> {
       return;
     }
     clearVaultState();
+    clearDemoTracker();
     state = emptyVaultState();
     saveVaultState(state);
     selectedBox = null;
@@ -309,15 +311,22 @@ async function init(): Promise<void> {
   });
 
   // Wire language toggle now that renderWall is in scope
-  setupLangToggle(() => {
+  setupLangToggle(async () => {
+    // Swap demo boxes: remove old-language demos, generate new-language demos
+    state = removeDemoBoxes(state);
+    state = await generateDemoBoxes(state, getLang());
+    saveVaultState(state);
+
     // Close any open panel so it re-renders in the new language
     if (selectedBox) {
       const currentBox = selectedBox;
       selectedBox = null;
       closePanel(panelEl);
       renderWall();
-      // Re-open the same box in the new language
-      setTimeout(() => handleBoxClick(currentBox), 50);
+      // Re-open the same box if it still exists in the new language
+      if (state.boxes[currentBox]) {
+        setTimeout(() => handleBoxClick(currentBox), 50);
+      }
     } else {
       renderWall();
     }
@@ -330,7 +339,7 @@ async function init(): Promise<void> {
 }
 
 // ---- Language toggle ----
-function setupLangToggle(onLangChange?: () => void): void {
+function setupLangToggle(onLangChange?: () => void | Promise<void>): void {
   document.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const lang = (btn.dataset.lang ?? 'en') as 'en' | 'ko';
