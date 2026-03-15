@@ -16,7 +16,7 @@
 //!   [`zeroize::ZeroizeOnDrop`].
 
 use anyhow::{anyhow, Result};
-use rand::RngCore;
+use rand::{rngs::OsRng, RngCore};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ pub fn split_secret(secret: &[u8], share_count: u8, threshold: u8) -> Result<Vec
         return Err(anyhow!("secret must not be empty"));
     }
 
-    let mut rng = rand::thread_rng();
+    let mut rng = OsRng;
 
     // Pre-allocate one Share per index.
     let mut shares: Vec<Share> = (1..=share_count)

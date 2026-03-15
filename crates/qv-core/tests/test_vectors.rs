@@ -187,11 +187,11 @@ fn container_serialise_deserialise_identity() {
 
 /// The container's `magic` field must equal the defined constant.
 #[test]
-fn container_magic_field_is_qvlt1() {
+fn container_magic_field_is_qvkp() {
     let (ct_bytes, _, _) = encrypt_bytes(b"magic check").unwrap();
     let c = QuantumVaultContainer::from_bytes(&ct_bytes).unwrap();
-    assert_eq!(c.magic, "QVLT1");
-    assert_eq!(c.version, 1);
+    assert_eq!(c.magic, "QVKP");
+    assert_eq!(c.version, 2);
 }
 
 // ── Full Pipeline Property Vectors ───────────────────────────────────────────

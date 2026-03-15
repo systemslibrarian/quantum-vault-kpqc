@@ -110,9 +110,9 @@ pub fn qv_encrypt(
     };
 
     let container = encrypt_file(plaintext, &options, &kem, &sig)
-        .map_err(|e| JsError::new(&e.to_string()))?;
+        .map_err(|_| JsError::new("encryption failed"))?;
 
-    let json_bytes = container.to_bytes().map_err(|e| JsError::new(&e.to_string()))?;
+    let json_bytes = container.to_bytes().map_err(|_| JsError::new("encryption failed"))?;
     String::from_utf8(json_bytes).map_err(|e| JsError::new(&e.to_string()))
 }
 
@@ -141,7 +141,7 @@ pub fn qv_decrypt(
     let sig = DevSignature;
 
     let container = QuantumVaultContainer::from_bytes(container_json.as_bytes())
-        .map_err(|e| JsError::new(&format!("container parse error: {e}")))?;
+        .map_err(|_| JsError::new("decryption failed"))?;
 
     // Deserialise the selected (shareIndex, privKey) pairs.
     #[derive(serde::Deserialize)]
@@ -170,14 +170,14 @@ pub fn qv_decrypt(
         .map_err(|e| JsError::new(&format!("invalid sig_pub_b64: {e}")))?;
 
     let to_verify =
-        container_signing_bytes(&container).map_err(|e| JsError::new(&e.to_string()))?;
+        container_signing_bytes(&container).map_err(|_| JsError::new("decryption failed"))?;
 
     let valid = sig
         .verify(&signer_public_key, &to_verify, &container.signature)
-        .map_err(|e| JsError::new(&e.to_string()))?;
+        .map_err(|_| JsError::new("decryption failed"))?;
 
     if !valid {
-        return Err(JsError::new("container signature verification failed"));
+        return Err(JsError::new("decryption failed"));
     }
 
     // 2. Recover one Shamir share per (shareIndex, privKey) pair.
@@ -193,16 +193,14 @@ pub fn qv_decrypt(
             .shares
             .iter()
             .find(|s| s.index == pair.share_index)
-            .ok_or_else(|| {
-                JsError::new(&format!("no share found with index {}", pair.share_index))
-            })?;
+            .ok_or_else(|| JsError::new("decryption failed"))?;
 
         let mut ss = kem
             .decapsulate(&privkey, &enc_share.kem_ciphertext)
-            .map_err(|e| JsError::new(&e.to_string()))?;
+            .map_err(|_| JsError::new("decryption failed"))?;
 
         let share_data = aead_unprotect(&enc_share.encrypted_share, &ss)
-            .map_err(|e| JsError::new(&e.to_string()))?;
+            .map_err(|_| JsError::new("decryption failed"))?;
 
         ss.zeroize();
         shares.push(Share { index: pair.share_index, data: share_data });
@@ -210,21 +208,16 @@ pub fn qv_decrypt(
 
     // 3. Reconstruct the file key from the recovered shares.
     let mut file_key =
-        reconstruct_secret(&shares).map_err(|e| JsError::new(&e.to_string()))?;
+        reconstruct_secret(&shares).map_err(|_| JsError::new("decryption failed"))?;
 
     // 4. AES-256-GCM decrypt with the same AAD used during encryption (M-001).
-    let aad = aes_aad(
-        container.version,
-        container.threshold,
-        &container.kem_algorithm,
-        &container.sig_algorithm,
-    );
+    let aad = aes_aad(&container);
     let aes_key = Key::<Aes256Gcm>::from_slice(&file_key);
     let cipher = Aes256Gcm::new(aes_key);
     let nonce = Nonce::from_slice(&container.nonce);
     let plaintext = cipher
         .decrypt(nonce, Payload { msg: container.ciphertext.as_slice(), aad: &aad })
-        .map_err(|_| JsError::new("AES-256-GCM decryption failed — wrong key or tampered data"))?;
+        .map_err(|_| JsError::new("decryption failed"))?;
 
     file_key.zeroize();
     Ok(plaintext)

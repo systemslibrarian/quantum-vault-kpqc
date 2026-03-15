@@ -10,7 +10,7 @@
 
 use crate::crypto::{kem::Kem, signature::Signature};
 use anyhow::{anyhow, Result};
-use rand::RngCore;
+use rand::{rngs::OsRng, RngCore};
 use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
 
@@ -35,7 +35,7 @@ pub struct DevKem;
 
 impl Kem for DevKem {
     fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-        let mut rng = rand::thread_rng();
+        let mut rng = OsRng;
         let mut privkey = vec![0u8; 32];
         rng.fill_bytes(&mut privkey);
         let pubkey = Sha256::digest(&privkey).to_vec();
@@ -49,7 +49,7 @@ impl Kem for DevKem {
                 pubkey.len()
             ));
         }
-        let mut rng = rand::thread_rng();
+        let mut rng = OsRng;
         let mut ss = vec![0u8; 32];
         rng.fill_bytes(&mut ss);
 
@@ -105,7 +105,7 @@ pub struct DevSignature;
 
 impl Signature for DevSignature {
     fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-        let mut rng = rand::thread_rng();
+        let mut rng = OsRng;
         let mut privkey = vec![0u8; 32];
         rng.fill_bytes(&mut privkey);
         let pubkey = Sha256::digest(&privkey).to_vec();

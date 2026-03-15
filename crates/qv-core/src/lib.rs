@@ -18,6 +18,7 @@
 pub mod container;
 pub mod crypto;
 pub mod decrypt;
+pub mod error;
 pub mod encrypt;
 pub mod shamir;
 
@@ -32,10 +33,10 @@ pub mod shamir;
 pub mod wasm;
 
 pub use container::{EncryptedKeyShare, QuantumVaultContainer};
+pub use error::{QvError, QvResult};
 pub use encrypt::generate_nonce;
 pub use shamir::{reconstruct_secret, split_secret, Share as KeyShare};
 
-use anyhow::Result;
 use crypto::backend::dev::{DevKem, DevSignature};
 use crypto::kem::Kem as _;
 use crypto::signature::Signature as _;
@@ -64,7 +65,7 @@ compile_error!(
 );
 
 /// Container format version used by the current implementation.
-pub const CONTAINER_VERSION: u8 = 1;
+pub const CONTAINER_VERSION: u8 = 2;
 
 /// Input options controlling key splitting and metadata during encryption.
 ///
@@ -133,7 +134,7 @@ pub fn encrypt_file(
     options: &EncryptOptions,
     kem: &dyn crypto::kem::Kem,
     signature: &dyn crypto::signature::Signature,
-) -> Result<QuantumVaultContainer> {
+) -> QvResult<QuantumVaultContainer> {
     encrypt::encrypt_file(plaintext, options, kem, signature)
 }
 
@@ -143,18 +144,18 @@ pub fn decrypt_file(
     options: &DecryptOptions,
     kem: &dyn crypto::kem::Kem,
     signature: &dyn crypto::signature::Signature,
-) -> Result<Vec<u8>> {
+) -> QvResult<Vec<u8>> {
     decrypt::decrypt_file(container, options, kem, signature)
 }
 
 /// Splits a symmetric key into threshold shares.
-pub fn split_key(secret: &[u8], share_count: u8, threshold: u8) -> Result<Vec<KeyShare>> {
-    split_secret(secret, share_count, threshold)
+pub fn split_key(secret: &[u8], share_count: u8, threshold: u8) -> QvResult<Vec<KeyShare>> {
+    split_secret(secret, share_count, threshold).map_err(|_| QvError::InvalidInput("invalid shamir parameters"))
 }
 
 /// Reconstructs a symmetric key from threshold shares.
-pub fn reconstruct_key(shares: &[KeyShare]) -> Result<Vec<u8>> {
-    reconstruct_secret(shares)
+pub fn reconstruct_key(shares: &[KeyShare]) -> QvResult<Vec<u8>> {
+    reconstruct_secret(shares).map_err(|_| QvError::InvalidInput("invalid shamir shares"))
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +173,7 @@ pub fn reconstruct_key(shares: &[KeyShare]) -> Result<Vec<u8>> {
 /// Key material is produced by the development stub (SHA-256/XOR).  Do **not**
 /// use this to protect real data.
 #[must_use = "encryption result contains keys required for decryption"]
-pub fn encrypt_bytes(plaintext: &[u8]) -> Result<EncryptResult> {
+pub fn encrypt_bytes(plaintext: &[u8]) -> QvResult<EncryptResult> {
     encrypt_with_threshold(plaintext, 2, 2)
 }
 
@@ -184,7 +185,7 @@ pub fn decrypt_bytes(
     container_json: &[u8],
     kem_privkeys: &[Vec<u8>],
     sig_pubkey: &[u8],
-) -> Result<Vec<u8>> {
+) -> QvResult<Vec<u8>> {
     decrypt_with_threshold(container_json, kem_privkeys, sig_pubkey)
 }
 
@@ -201,16 +202,16 @@ pub fn encrypt_with_threshold(
     plaintext: &[u8],
     share_count: u8,
     threshold: u8,
-) -> Result<EncryptResult> {
+) -> QvResult<EncryptResult> {
     let kem = DevKem;
     let sig = DevSignature;
 
-    let (sig_pub, sig_priv) = sig.generate_keypair()?;
+    let (sig_pub, sig_priv) = sig.generate_keypair().map_err(|_| QvError::EncryptionFailed)?;
 
     let mut kem_pubkeys: Vec<Vec<u8>> = Vec::with_capacity(share_count as usize);
     let mut kem_privkeys: Vec<Vec<u8>> = Vec::with_capacity(share_count as usize);
     for _ in 0..share_count {
-        let (pk, sk) = kem.generate_keypair()?;
+        let (pk, sk) = kem.generate_keypair().map_err(|_| QvError::EncryptionFailed)?;
         kem_pubkeys.push(pk);
         kem_privkeys.push(sk);
     }
@@ -235,10 +236,10 @@ pub fn decrypt_with_threshold(
     container_json: &[u8],
     kem_privkeys: &[Vec<u8>],
     sig_pubkey: &[u8],
-) -> Result<Vec<u8>> {
+) -> QvResult<Vec<u8>> {
     let kem = DevKem;
     let sig = DevSignature;
-    let container = QuantumVaultContainer::from_bytes(container_json)?;
+    let container = QuantumVaultContainer::from_bytes(container_json).map_err(|_| QvError::DecryptionFailed)?;
     // Derive share indices from the container's shares in order (positional match).
     let share_indices: Vec<u8> = container
         .shares
@@ -251,7 +252,7 @@ pub fn decrypt_with_threshold(
         share_indices,
         signer_public_key: sig_pubkey.to_vec(),
     };
-    decrypt::decrypt_file(&container, &options, &kem, &sig)
+    decrypt::decrypt_file(&container, &options, &kem, &sig).map_err(|_| QvError::DecryptionFailed)
 }
 
 // ---------------------------------------------------------------------------

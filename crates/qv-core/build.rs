@@ -132,7 +132,7 @@ fn find_versioned_subdir(base: &std::path::Path) -> std::path::PathBuf {
     let mut dirs: Vec<_> = std::fs::read_dir(base)
         .unwrap_or_else(|e| panic!("cannot read directory {}: {}", base.display(), e))
         .flatten()
-        .filter(|e| e.file_type().map_or(false, |t| t.is_dir()))
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
         .filter(|e| !e.file_name().to_string_lossy().starts_with('.'))
         .filter(|e| e.path().join("reference_implementation").is_dir())
         .collect();
@@ -188,7 +188,7 @@ fn compile_smaug_t(src: &std::path::Path, _level: u8) {
         .flatten()
         .filter(|e| {
             let p = e.path();
-            p.extension().map_or(false, |ext| ext == "c")
+            p.extension().is_some_and(|ext| ext == "c")
                 && p.file_name() != Some(OsStr::new("randombytes.c"))
         })
         .map(|e| e.path())
@@ -267,7 +267,7 @@ fn compile_haetae(src: &std::path::Path, _level: u8) {
         .flatten()
         .filter(|e| {
             let p = e.path();
-            p.extension().map_or(false, |ext| ext == "c")
+            p.extension().is_some_and(|ext| ext == "c")
                 && p.file_name() != Some(OsStr::new("randombytes.c"))
         })
         .map(|e| e.path())
