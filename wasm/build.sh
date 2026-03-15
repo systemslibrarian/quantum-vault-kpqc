@@ -65,6 +65,7 @@ emcc \
   -s WASM=1 \
   -s MODULARIZE=1 \
   -s EXPORT_NAME='createSmaugModule' \
+  -s EXPORT_ES6=1 \
   -s ENVIRONMENT='web,node' \
   -s INITIAL_MEMORY=4194304 \
   -s ALLOW_MEMORY_GROWTH=1 \
@@ -107,6 +108,7 @@ emcc \
   -s WASM=1 \
   -s MODULARIZE=1 \
   -s EXPORT_NAME='createHaetaeModule' \
+  -s EXPORT_ES6=1 \
   -s ENVIRONMENT='web,node' \
   -s INITIAL_MEMORY=4194304 \
   -s ALLOW_MEMORY_GROWTH=1 \
