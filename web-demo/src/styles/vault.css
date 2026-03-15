@@ -804,25 +804,25 @@ body {
   background: #faf8f4;
   border: 1px solid #d4d0c8;
   border-radius: 8px;
-  padding: 20px 22px;
-  margin-top: 18px;
+  padding: 14px 16px;
+  margin-top: 12px;
 }
 
 .kpqc-panel-title {
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #1a1715;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
   border-bottom: 2px solid #003478;
   display: inline-block;
 }
 
 .kpqc-panel p {
-  font-size: 0.88rem;
-  line-height: 1.6;
+  font-size: 0.82rem;
+  line-height: 1.5;
   color: #3a3530;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .kpqc-panel-subhead {
@@ -868,25 +868,27 @@ body {
    ========================================================== */
 .pipeline-diagram {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 0;
-  margin: 14px 0;
-  padding: 14px 16px;
+  margin: 8px 0 4px;
+  padding: 8px 12px;
   background: #f0ede6;
   border-radius: 6px;
   border: 1px solid #d4d0c8;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .pd-step {
   background: #fff;
   border: 1px solid #c8c4bc;
   border-radius: 4px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   font-weight: 600;
   color: #2a2520;
   font-family: 'Noto Sans', 'Pretendard', system-ui, sans-serif;
+  white-space: nowrap;
 }
 
 .pd-step-kpqc {
@@ -896,8 +898,8 @@ body {
 
 .pd-arrow {
   color: #aaa;
-  font-size: 1rem;
-  padding: 2px 18px;
+  font-size: 0.85rem;
+  padding: 0 6px;
   user-select: none;
 }
 
@@ -1149,22 +1151,22 @@ main.page-wrapper {
 .demo-instructions {
   background: #fff;
   border: 1px solid #dcdfe6;
-  border-left: 4px solid #003478; /* Use the existing blue theme color */
+  border-left: 4px solid #003478;
   border-radius: 4px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
+  padding: 8px 14px;
+  margin-bottom: 6px;
 }
 
 .instruction-list {
-  padding-left: 20px;
+  padding-left: 18px;
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.84rem;
+  line-height: 1.4;
   color: #2c3e50;
 }
 
 .instruction-list li {
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .instruction-list li:last-child {
