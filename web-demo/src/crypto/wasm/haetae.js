@@ -904,6 +904,3 @@ if (typeof exports === 'object' && typeof module === 'object') {
 } else if (typeof define === 'function' && define['amd'])
   define([], () => createHaetaeModule);
 
-// ES6 export for Vite/Rollup bundlers
-export default createHaetaeModule;
-
