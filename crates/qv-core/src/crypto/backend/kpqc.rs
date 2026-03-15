@@ -33,7 +33,7 @@
 //! ```
 
 use crate::crypto::{kem::Kem, signature::Signature};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 // ===========================================================================
 // ── NATIVE path (kpqc-native) ──────────────────────────────────────────────
@@ -107,16 +107,16 @@ mod wasm_backend {
 
     impl Kem for KpqcKem {
         fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-            Err(anyhow!(
+            Err(anyhow::anyhow!(
                 "SMAUG-T WASM backend is not yet implemented. \
                  A pure-Rust port or emcc-compiled binding is required."
             ))
         }
         fn encapsulate(&self, _pubkey: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
-            Err(anyhow!("SMAUG-T WASM backend is not yet implemented."))
+            Err(anyhow::anyhow!("SMAUG-T WASM backend is not yet implemented."))
         }
         fn decapsulate(&self, _privkey: &[u8], _ct: &[u8]) -> Result<Vec<u8>> {
-            Err(anyhow!("SMAUG-T WASM backend is not yet implemented."))
+            Err(anyhow::anyhow!("SMAUG-T WASM backend is not yet implemented."))
         }
         fn algorithm_id(&self) -> &'static str {
             "SMAUG-T-3"
@@ -128,16 +128,16 @@ mod wasm_backend {
 
     impl Signature for KpqcSignature {
         fn generate_keypair(&self) -> Result<(Vec<u8>, Vec<u8>)> {
-            Err(anyhow!(
+            Err(anyhow::anyhow!(
                 "HAETAE WASM backend is not yet implemented. \
                  A pure-Rust port or emcc-compiled binding is required."
             ))
         }
         fn sign(&self, _privkey: &[u8], _message: &[u8]) -> Result<Vec<u8>> {
-            Err(anyhow!("HAETAE WASM backend is not yet implemented."))
+            Err(anyhow::anyhow!("HAETAE WASM backend is not yet implemented."))
         }
         fn verify(&self, _pubkey: &[u8], _message: &[u8], _sig: &[u8]) -> Result<bool> {
-            Err(anyhow!("HAETAE WASM backend is not yet implemented."))
+            Err(anyhow::anyhow!("HAETAE WASM backend is not yet implemented."))
         }
         fn algorithm_id(&self) -> &'static str {
             "HAETAE-3"
@@ -197,7 +197,7 @@ mod stub {
     }
 
     fn not_available(algo: &str) -> anyhow::Error {
-        anyhow!(
+        anyhow::anyhow!(
             "{algo} is not available in this build. \
              Compile with `--features kpqc-native` (requires vendored C source) \
              or `--features kpqc-wasm` for the browser backend."

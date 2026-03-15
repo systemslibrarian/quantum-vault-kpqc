@@ -16,6 +16,8 @@
 //! | `bad_kem_payload.bin` | `kem_ciphertext` element = 999 (out of `u8` range) |
 //! | `invalid_tag.bin` | `nonce` length = 8 (must be exactly 12) |
 //! | `bad_signature.bin` | `signature` field is JSON `null` (cannot decode as `Vec<u8>`) |
+//! | `wrong_root_type.bin` | top-level JSON is an array, not a container object |
+//! | `deeply_nested_json.bin` | deeply nested non-container JSON object |
 //!
 //! ## Regenerating corpus files
 //!
@@ -36,43 +38,65 @@ use qv_core::container::QuantumVaultContainer;
 // exactly the same bytes.
 // ---------------------------------------------------------------------------
 
+fn deeply_nested_json_bytes(depth: usize) -> Vec<u8> {
+    let mut data = Vec::with_capacity(depth * 16 + 32);
+    for _ in 0..depth {
+        data.extend_from_slice(br#"{"nested":"#);
+    }
+    data.extend_from_slice(br#""not-a-container""#);
+    for _ in 0..depth {
+        data.push(b'}');
+    }
+    data
+}
+
 /// All corpus entries: `(filename, content_bytes)`.
-fn corpus_entries() -> Vec<(&'static str, &'static [u8])> {
+fn corpus_entries() -> Vec<(String, Vec<u8>)> {
     vec![
         // 1. Wrong magic string.
         (
-            "invalid_magic.bin",
-            br#"{"magic":"NOT_QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1,2,3],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1,2,3]}"#,
+            "invalid_magic.bin".to_string(),
+            br#"{"magic":"NOT_QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1,2,3],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1,2,3]}"#.to_vec(),
         ),
         // 2. JSON truncated mid-field — JSON parse error.
         (
-            "truncated_container.bin",
-            br#"{"magic":"QVLT1","version":1,"cipher":"Aes2"#,
+            "truncated_container.bin".to_string(),
+            br#"{"magic":"QVLT1","version":1,"cipher":"Aes2"#.to_vec(),
         ),
         // 3. Duplicate `magic` field — serde returns "duplicate field `magic`".
         (
-            "duplicate_fields.bin",
-            br#"{"magic":"QVLT1","magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#,
+            "duplicate_fields.bin".to_string(),
+            br#"{"magic":"QVLT1","magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#.to_vec(),
         ),
         // 4. `threshold` = 1 — below minimum of 2.
         (
-            "oversized_metadata.bin",
-            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":1,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#,
+            "oversized_metadata.bin".to_string(),
+            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":1,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#.to_vec(),
         ),
         // 5. `kem_ciphertext` element 999 is out of u8 range — deserialization error.
         (
-            "bad_kem_payload.bin",
-            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[999],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#,
+            "bad_kem_payload.bin".to_string(),
+            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[999],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#.to_vec(),
         ),
         // 6. `nonce` has 8 bytes — must be exactly 12.
         (
-            "invalid_tag.bin",
-            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#,
+            "invalid_tag.bin".to_string(),
+            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":[1]}"#.to_vec(),
         ),
         // 7. `signature` is JSON null — cannot decode as Vec<u8>.
         (
-            "bad_signature.bin",
-            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":null}"#,
+            "bad_signature.bin".to_string(),
+            br#"{"magic":"QVLT1","version":1,"cipher":"Aes256Gcm","kem_algorithm":"dev-kem","sig_algorithm":"dev-sig","threshold":2,"share_count":2,"nonce":[0,0,0,0,0,0,0,0,0,0,0,0],"ciphertext":[1],"shares":[{"index":1,"kem_ciphertext":[1],"encrypted_share":[1]},{"index":2,"kem_ciphertext":[1],"encrypted_share":[1]}],"signature":null}"#.to_vec(),
+        ),
+        // 8. Top-level JSON array, not an object.
+        (
+            "wrong_root_type.bin".to_string(),
+            br#"[]"#.to_vec(),
+        ),
+        // 9. Deeply nested non-container JSON object.
+        (
+            "deeply_nested_json.bin".to_string(),
+            deeply_nested_json_bytes(128),
         ),
     ]
 }
@@ -136,10 +160,24 @@ fn malformed_containers_all_fail() {
 fn corpus_definitions_all_fail() {
     for (name, data) in corpus_entries() {
         assert!(
-            QuantumVaultContainer::from_bytes(data).is_err(),
+            QuantumVaultContainer::from_bytes(&data).is_err(),
             "in-code corpus entry '{name}' should be rejected but was accepted"
         );
     }
+}
+
+/// Oversized inputs should fail immediately on the size guard before any JSON
+/// parsing or allocation-heavy structural work occurs.
+#[test]
+fn oversized_input_is_rejected_before_json_parse() {
+    const MAX_CONTAINER_BYTES: usize = 64 * 1024 * 1024;
+    let oversized = vec![b'x'; MAX_CONTAINER_BYTES + 1];
+    let err = QuantumVaultContainer::from_bytes(&oversized).unwrap_err();
+    let message = err.to_string();
+    assert!(
+        message.contains("maximum allowed size"),
+        "oversized input should hit size guard, got: {message}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +205,7 @@ fn regenerate_corpus() {
 
     for (filename, content) in corpus_entries() {
         let path = corpus_dir.join(filename);
-        std::fs::write(&path, content)
+        std::fs::write(&path, &content)
             .unwrap_or_else(|e| panic!("failed to write {}: {e}", path.display()));
         println!("wrote {} ({} bytes)", path.display(), content.len());
     }

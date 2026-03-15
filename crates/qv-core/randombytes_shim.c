@@ -13,6 +13,7 @@
 
 #if defined(__linux__)
 # include <errno.h>
+# include <stdlib.h>
 # include <sys/random.h>
 
 void randombytes(uint8_t *x, size_t xlen) {

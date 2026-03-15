@@ -121,15 +121,20 @@ fn compile_kpqc_native() {
     compile_haetae(&haetae_src, haetae_level);
 }
 
-/// Walk `base` one level deep to find the single versioned sub-directory
-/// (e.g. `SMAUG-T-1.1.1/` or `HAETAE-1.1.2/`).  The build fails with a
-/// helpful message if zero or more than one sub-directory is found.
+/// Walk `base` one level deep to find the single extracted source directory
+/// (e.g. `SMAUG-T-1.1.1/` or `HAETAE-1.1.2/`). Hidden directories like `.git/`
+/// and any directory that does not contain `reference_implementation/` are
+/// ignored so a vendored source tree can coexist with repository metadata.
+/// The build fails with a helpful message if zero or more than one matching
+/// sub-directory is found.
 #[cfg(feature = "kpqc-native")]
 fn find_versioned_subdir(base: &std::path::Path) -> std::path::PathBuf {
     let mut dirs: Vec<_> = std::fs::read_dir(base)
         .unwrap_or_else(|e| panic!("cannot read directory {}: {}", base.display(), e))
         .flatten()
         .filter(|e| e.file_type().map_or(false, |t| t.is_dir()))
+        .filter(|e| !e.file_name().to_string_lossy().starts_with('.'))
+        .filter(|e| e.path().join("reference_implementation").is_dir())
         .collect();
     match dirs.len() {
         0 => panic!(

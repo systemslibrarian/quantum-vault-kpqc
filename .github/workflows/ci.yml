@@ -58,6 +58,14 @@ jobs:
             --manifest-path crates/qv-core/fuzz/Cargo.toml \
             -- -max_total_time=30 -max_len=4096
 
+      - name: Fuzz decrypt pipeline (short smoke run)
+        run: |
+          rustup install nightly --no-self-update
+          cargo +nightly install cargo-fuzz --locked 2>/dev/null || true
+          cargo +nightly fuzz run fuzz_decrypt_pipeline \
+            --manifest-path crates/qv-core/fuzz/Cargo.toml \
+            -- -max_total_time=30 -max_len=4096
+
       - name: Security audit
         run: |
           cargo install cargo-audit --locked

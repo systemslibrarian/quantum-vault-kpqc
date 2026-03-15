@@ -29,7 +29,7 @@ use crate::{
     crypto::backend::dev::{DevKem, DevSignature},
     crypto::kem::Kem,
     crypto::signature::Signature,
-    encrypt::{aes_aad, container_signing_bytes, encrypt_file, xor_protect},
+    encrypt::{aead_unprotect, aes_aad, container_signing_bytes, encrypt_file},
     shamir::{reconstruct_secret, Share},
     EncryptOptions,
 };
@@ -201,7 +201,7 @@ pub fn qv_decrypt(
             .decapsulate(&privkey, &enc_share.kem_ciphertext)
             .map_err(|e| JsError::new(&e.to_string()))?;
 
-        let share_data = xor_protect(&enc_share.encrypted_share, &ss)
+        let share_data = aead_unprotect(&enc_share.encrypted_share, &ss)
             .map_err(|e| JsError::new(&e.to_string()))?;
 
         ss.zeroize();

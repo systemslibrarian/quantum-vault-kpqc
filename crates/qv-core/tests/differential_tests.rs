@@ -13,10 +13,11 @@
 //! path from the backend implementations.  Any implementation divergence is
 //! detected as a test failure.
 //!
-//! For the production KpqC backend (SMAUG-T / HAETAE), KAT vectors would be
-//! compared against official NIST/KpqC submission test vectors stored as JSON
-//! fixtures.  Those tests are scaffolded below and marked `#[ignore]`; they
-//! require the `kpqc-native` feature and vendor C libraries.
+//! For the production KpqC backend (SMAUG-T / HAETAE), this file now includes
+//! feature-gated native smoke tests that exercise keygen, encapsulation,
+//! decapsulation, signing, and verification through the vendored C reference
+//! implementations. True deterministic KATs still require seeded APIs or
+//! external fixture files, so those remain scaffolded and ignored below.
 //!
 //! ## Dev-backend algorithm specification (from `dev.rs` comments)
 //!
@@ -300,6 +301,56 @@ fn full_pipeline_encrypt_decrypt_consistent() {
     assert_eq!(
         recovered, plaintext,
         "full pipeline round-trip must recover the original plaintext"
+    );
+}
+
+// ============================================================================
+// Native KpqC smoke tests (feature-gated, non-deterministic)
+// ============================================================================
+
+#[cfg(feature = "kpqc-native")]
+#[test]
+fn kpqc_native_kem_roundtrip() {
+    use qv_core::crypto::backend::kpqc::KpqcKem;
+
+    let kem = KpqcKem;
+    let (pk, sk) = kem.generate_keypair().unwrap();
+    let (ct, ss_enc) = kem.encapsulate(&pk).unwrap();
+    let ss_dec = kem.decapsulate(&sk, &ct).unwrap();
+
+    assert_eq!(ss_enc, ss_dec, "native SMAUG-T roundtrip shared secrets must match");
+}
+
+#[cfg(feature = "kpqc-native")]
+#[test]
+fn kpqc_native_signature_roundtrip() {
+    use qv_core::crypto::backend::kpqc::KpqcSignature;
+
+    let sig = KpqcSignature;
+    let (pk, sk) = sig.generate_keypair().unwrap();
+    let message = b"kpqc-native signature smoke test";
+    let signature = sig.sign(&sk, message).unwrap();
+
+    assert!(
+        sig.verify(&pk, message, &signature).unwrap(),
+        "native HAETAE signature must verify"
+    );
+}
+
+#[cfg(feature = "kpqc-native")]
+#[test]
+fn kpqc_native_signature_rejects_tamper() {
+    use qv_core::crypto::backend::kpqc::KpqcSignature;
+
+    let sig = KpqcSignature;
+    let (pk, sk) = sig.generate_keypair().unwrap();
+    let message = b"kpqc-native signature tamper test";
+    let mut signature = sig.sign(&sk, message).unwrap();
+    signature[0] ^= 0x01;
+
+    assert!(
+        !sig.verify(&pk, message, &signature).unwrap(),
+        "native HAETAE verify must reject a tampered signature"
     );
 }
 
