@@ -15,10 +15,11 @@ EM_JS(int, js_randombytes_checked, (uint8_t *buf, size_t len), {
         // Generate random bytes into a temporary array
         var tmp = new Uint8Array(len);
         crypto.getRandomValues(tmp);
-        // Copy into WASM memory using HEAPU8 (view is always current after memory ops)
-        HEAPU8.set(tmp, buf);
+        // Copy into WASM memory using Module['HEAPU8'] (guaranteed to be current)
+        Module['HEAPU8'].set(tmp, buf);
         return 0;
     } catch(e) {
+        console.error('js_randombytes_checked error:', e);
         return -1;
     }
 });
