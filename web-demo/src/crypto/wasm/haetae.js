@@ -602,6 +602,24 @@ async function createWasm() {
       return false;
     };
 
+  var initRandomFill = () => {
+      // This block is not needed on v19+ since crypto.getRandomValues is builtin
+      if (ENVIRONMENT_IS_NODE) {
+        var nodeCrypto = require('node:crypto');
+        return (view) => nodeCrypto.randomFillSync(view);
+      }
+  
+      return (view) => crypto.getRandomValues(view);
+    };
+  var randomFill = (view) => {
+      // Lazily init on the first invocation.
+      (randomFill = initRandomFill())(view);
+    };
+  var _random_get = (buffer, size) => {
+      randomFill(HEAPU8.subarray(buffer, buffer + size));
+      return 0;
+    };
+
   var getCFunc = (ident) => {
       var func = Module['_' + ident]; // closure exported function
       return func;
@@ -869,7 +887,6 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 
 // end include: postlibrary.js
 
-function js_randombytes_checked(buf,len) { try { var tmp = new Uint8Array(len); crypto.getRandomValues(tmp); Module['HEAPU8'].set(tmp, buf); return 0; } catch(e) { console.error('js_randombytes_checked error:', e); return -1; } }
 
 // Imports from the Wasm binary.
 var _haetae_secure_zeroize,
@@ -912,7 +929,7 @@ var wasmImports = {
   /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
   /** @export */
-  js_randombytes_checked
+  random_get: _random_get
 };
 
 

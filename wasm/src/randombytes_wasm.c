@@ -2,36 +2,28 @@
  * randombytes_wasm.c — replaces the native randombytes.c from both
  * SMAUG-T and HAETAE reference implementations when compiling to WebAssembly.
  *
- * Routes all randomness requests to JavaScript's crypto.getRandomValues()
- * via Emscripten's EM_JS macro.
+ * Uses Emscripten's built-in getentropy() which routes to
+ * crypto.getRandomValues() in a way that's safe during module initialization.
  */
 
 #include <stddef.h>
 #include <stdint.h>
-#include <emscripten.h>
-
-EM_JS(int, js_randombytes_checked, (uint8_t *buf, size_t len), {
-    try {
-        // Generate random bytes into a temporary array
-        var tmp = new Uint8Array(len);
-        crypto.getRandomValues(tmp);
-        // Copy into WASM memory using Module['HEAPU8'] (guaranteed to be current)
-        Module['HEAPU8'].set(tmp, buf);
-        return 0;
-    } catch(e) {
-        console.error('js_randombytes_checked error:', e);
-        return -1;
-    }
-});
+#include <stdlib.h>
+#include <unistd.h>  /* getentropy() */
 
 /* SMAUG-T uses: int randombytes(uint8_t *x, size_t xlen) */
 /* HAETAE uses:  int randombytes(uint8_t *out, size_t outlen) */
 int randombytes(uint8_t *out, size_t outlen) {
-    if (js_randombytes_checked(out, outlen) != 0) {
-        /* crypto.getRandomValues failed — abort rather than continuing with
-         * uninitialised entropy. Callers would receive success (0) and proceed
-         * with zero bytes, silently violating §6 requirement 3 of the threat model. */
-        abort();
+    /* getentropy() is limited to 256 bytes per call, so loop if needed */
+    while (outlen > 0) {
+        size_t chunk = outlen > 256 ? 256 : outlen;
+        if (getentropy(out, chunk) != 0) {
+            /* Failed to get entropy — abort rather than continue with
+             * uninitialised data. */
+            abort();
+        }
+        out += chunk;
+        outlen -= chunk;
     }
     return 0;
 }
