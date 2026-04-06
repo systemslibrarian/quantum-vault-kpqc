@@ -1,7 +1,7 @@
 # Quantum Vault — v5.1
 
-[![CI](https://github.com/systemslibrarian/quantum-vault-kpqc/actions/workflows/ci.yml/badge.svg)](https://github.com/systemslibrarian/quantum-vault-kpqc/actions/workflows/ci.yml)
-[![Deploy](https://github.com/systemslibrarian/quantum-vault-kpqc/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/systemslibrarian/quantum-vault-kpqc/actions/workflows/deploy-pages.yml)
+[![CI](https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc/actions/workflows/ci.yml/badge.svg)](https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc/actions/workflows/ci.yml)
+[![Deploy](https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc/actions/workflows/deploy-pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **An educational threshold secret-storage demo using Korean post-quantum cryptography in the browser.**
@@ -14,7 +14,7 @@ The demo uses browser-executed WebAssembly compiled from the official C referenc
 
 ## Live Demo
 
-👉 **[systemslibrarian.github.io/quantum-vault-kpqc](https://systemslibrarian.github.io/quantum-vault-kpqc/)**
+👉 **[systemslibrarian.github.io/crypto-lab-quantum-vault-kpqc](https://systemslibrarian.github.io/crypto-lab-quantum-vault-kpqc/)**
 
 Three demo boxes are pre-sealed on first visit. Each requires two correct passwords (2-of-3 threshold).
 
@@ -97,7 +97,7 @@ The NIST PQC process selected ML-KEM (Kyber) and ML-DSA (Dilithium). This projec
 ## Project Layout
 
 ```
-quantum-vault-kpqc/
+crypto-lab-quantum-vault-kpqc/
 │
 ├─ crates/
 │   ├─ qv-core/       ← Rust crypto library (AES-GCM + Shamir + security/fuzz tests)
@@ -172,7 +172,7 @@ npm run dev          # Vite dev server → http://localhost:5173
 npm run build        # outputs to web-demo/dist/
 ```
 
-The Vite config sets `base: '/quantum-vault-kpqc/'` to match the GitHub Pages subdirectory.
+The Vite config sets `base: '/crypto-lab-quantum-vault-kpqc/'` to match the GitHub Pages subdirectory.
 
 ---
 

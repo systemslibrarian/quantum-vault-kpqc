@@ -17,7 +17,7 @@ test.describe('WASM initialization', () => {
     });
 
     // Navigate to the demo
-    await page.goto('/quantum-vault-kpqc/');
+    await page.goto('/crypto-lab-quantum-vault-kpqc/');
     
     // Wait for the vault to initialize (status badge should appear)
     await page.waitForSelector('[data-testid="status-badge"], .status-badge, .vault-status', {
@@ -50,7 +50,7 @@ test.describe('WASM initialization', () => {
     const errors: string[] = [];
     page.on('pageerror', err => errors.push(err.message));
 
-    await page.goto('/quantum-vault-kpqc/');
+    await page.goto('/crypto-lab-quantum-vault-kpqc/');
     await page.waitForTimeout(2000);
     
     // Try clicking on box 01 (password: demo01)

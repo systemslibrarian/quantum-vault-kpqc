@@ -75,7 +75,7 @@ jobs:
       - name: Build Vite bundle
         working-directory: web-demo
         run: npm run build
-        # base path '/quantum-vault-kpqc/' is set permanently in vite.config.ts
+        # base path '/crypto-lab-quantum-vault-kpqc/' is set permanently in vite.config.ts
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

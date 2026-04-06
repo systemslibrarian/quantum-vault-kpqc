@@ -10,8 +10,8 @@ Be respectful. This is an educational project — questions and constructive fee
 
 ```bash
 # Clone the repository
-git clone https://github.com/systemslibrarian/quantum-vault-kpqc.git
-cd quantum-vault-kpqc
+git clone https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc.git
+cd crypto-lab-quantum-vault-kpqc
 
 # Build and test Rust
 cargo build --workspace
@@ -89,7 +89,7 @@ docs: update README with demo credentials disclaimer
 
 ## What to Work On
 
-Check the [Issues](https://github.com/systemslibrarian/quantum-vault-kpqc/issues) tab for open tasks. Look for labels:
+Check the [Issues](https://github.com/systemslibrarian/crypto-lab-quantum-vault-kpqc/issues) tab for open tasks. Look for labels:
 
 - `good first issue` — Beginner-friendly tasks
 - `help wanted` — Areas where contributions are especially welcome
